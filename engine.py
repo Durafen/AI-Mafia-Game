@@ -265,8 +265,9 @@ class GameEngine:
                     eliminated.state.is_alive = False
                     self.log("Result", "System", "Death", f"{target} was HANGED by the town!")
                     print(f"💀💀💀 {target} IS DEAD 💀💀💀")
-                    # Check role reveal?
-                    self.log("Result", "System", "Reveal", f"{target} was {eliminated.state.role}")
+                    # Check role reveal? No reveal requested.
+                    # self.log("Result", "System", "Reveal", f"{target} was {eliminated.state.role}")
+                    self.log("Result", "System", "Info", f"{target} is dead.")
 
             # Check Win again before Night
             # ... (Implicitly handled at loop start)
