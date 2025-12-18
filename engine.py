@@ -8,6 +8,7 @@ from schemas import GameState, LogEntry, TurnOutput
 # TTS Config
 TTS_ENABLED = True   # Set to False to disable text-to-speech
 TTS_RATE = "+20%"    # Speech speed: "+20%" = 20% faster, "-10%" = 10% slower
+AUTO_CONTINUE = True # Set to True to run without user intervention
 
 # Config for Roster (with TTS voices)
 ROSTER_CONFIG = [
@@ -35,6 +36,7 @@ import os
 import tempfile
 import subprocess
 import threading
+import time
 from datetime import datetime
 
 try:
@@ -265,6 +267,9 @@ class GameEngine:
         return [p for p in self.players if p.state.is_alive]
 
     def _wait_for_next(self):
+        if AUTO_CONTINUE:
+            time.sleep(2)
+            return
         input("\n[PRESS ENTER TO CONTINUE NEXT ACTION] >> ")
 
     def check_game_over(self) -> bool:
@@ -408,33 +413,42 @@ class GameEngine:
                 final_votes = {} # PlayerName -> TargetName
 
                 for player in living:
-                    # Everyone votes fresh
-                    self._wait_for_next()
                     try:
+                        # Generate while previous TTS might still be playing
                         output = player.take_turn(self.state, self.state.turn)
                         vote_target = output.vote
-                        
+
+                        # Wait for previous TTS before displaying
+                        self.tts.wait_for_speech()
+
                         # Print Thought
                         prefix = "👺 " if player.state.role == "Mafia" else ""
                         self._print(f"\n💭 {prefix}{player.state.name} Thinking: {output.thought}")
-                        
+
                         # Validate vote
                         # MUST be in nominees list (if nominees exist)
                         if nominees and vote_target not in nominees:
                             self._print(f"[Invalid Vote] {player.state.name} voted for {vote_target} (Not a nominee)")
-                            vote_target = "Skip"  
+                            vote_target = "Skip"
                         elif not nominees and vote_target not in [p.state.name for p in living]:
                              # Fallback if no nominees (shouldn't happen due to logic above skipping phase, but safety)
                              vote_target = "Skip"
 
                         final_votes[player.state.name] = vote_target
-                        
-                        # Force silence in log
+
+                        # Log the vote
                         self.log("Voting", player.state.name, "vote", f"[Voted for {vote_target}]")
-                        
+
+                        # TTS for vote announcement
+                        if vote_target and vote_target != "Skip":
+                            self.tts.speak(f"I vote for {vote_target}.", player.state.name, background=True)
+
                     except Exception as e:
                         self._print(f"Error voting: {e}")
                         final_votes[player.state.name] = "Skip"
+
+                    # User can press Enter while TTS plays
+                    self._wait_for_next()
 
                 # Aggregate Tally from final_votes
                 votes = {}
