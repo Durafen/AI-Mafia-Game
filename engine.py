@@ -164,8 +164,9 @@ class GameEngine:
             
             # 1. Speaking Round
             living = self._get_living_players()
-            # Order stays fixed (ROSTER order) per user request
-            
+            # Track votes cast during the day
+            day_votes = {} # PlayerName -> VoteTarget
+
             self.log("Day", "System", "Info", f"Alive: {', '.join(p.state.name for p in living)}")
 
             for player in living:
@@ -176,7 +177,13 @@ class GameEngine:
                     prefix = "👺 " if player.state.role == "Mafia" else ""
                     print(f"\n💭 {prefix}{player.state.name} Thinking: {output.thought}")
                     
-                    self.log("Day", player.state.name, "speak", output.speech, vote_target=output.vote)
+                    self.log("Day", player.state.name, "speak", output.speech or "", vote_target=output.vote)
+
+                    # Capture early vote if present and valid (Day 2+)
+                    if self.state.turn > 1 and output.vote:
+                         # Normalize validity check later or now? Let's assume raw string for now.
+                         day_votes[player.state.name] = output.vote
+
                 except Exception as e:
                     self.log("Day", player.state.name, "error", f"Failed to speak: {e}")
 
@@ -184,9 +191,29 @@ class GameEngine:
             if self.state.turn > 1:
                 self.state.phase = "Voting"
                 print("\n🗳️  VOTING TIME 🗳️")
-                votes = {} # target -> count
                 
+                # We need to compile final votes from both Day actions and this phase
+                final_votes = {} # PlayerName -> TargetName
+
                 for player in living:
+                    p_name = player.state.name
+                    
+                    # Check if already voted
+                    if p_name in day_votes:
+                        vote_target = day_votes[p_name]
+                        # Validate
+                        if vote_target not in [p.state.name for p in living]:
+                            vote_target = "Skip"
+                        
+                        final_votes[p_name] = vote_target
+                        print(f"\n[Locked Vote] {p_name} already voted for {vote_target}")
+                        # No log needed here if we assumed the Day log covered it? 
+                        # But Day log mixed speech and vote. Voting Phase log usually confirms it.
+                        # Let's log it as a confirm so the tally summary works.
+                        self.log("Voting", p_name, "vote_locked", f"Confirmed vote for {vote_target}", vote_target=vote_target)
+                        continue
+
+                    # Otherwise, late vote
                     self._wait_for_next()
                     try:
                         output = player.take_turn(self.state, self.state.turn)
@@ -200,12 +227,18 @@ class GameEngine:
                         if vote_target not in [p.state.name for p in living]:
                             vote_target = "Skip" # Invalid vote
                         
+                        final_votes[p_name] = vote_target
                         self.log("Voting", player.state.name, "vote", f"Voted for {vote_target}", vote_target=vote_target)
                         
-                        if vote_target != "Skip":
-                            votes[vote_target] = votes.get(vote_target, 0) + 1
                     except Exception as e:
                         print(f"Error voting: {e}")
+                        final_votes[p_name] = "Skip"
+
+                # Aggregate Tally from final_votes
+                votes = {}
+                for target in final_votes.values():
+                    if target != "Skip":
+                        votes[target] = votes.get(target, 0) + 1
 
                 # Tally Summary
                 tally_parts = [f"{k} ({v})" for k,v in votes.items()]
@@ -221,15 +254,19 @@ class GameEngine:
                     winners = [k for k, v in votes.items() if v == max_votes]
                     
                     if len(winners) > 1:
-                        self.log("Result", "System", "Tie", f"Tie between {winners}. No one dies.")
+                        import random
+                        target = random.choice(winners)
+                        self.log("Result", "System", "TieBreak", f"Tie between {winners}. Randomly chose: {target}")
                     else:
-                        # KILL
-                        eliminated = self.active_players[target]
-                        eliminated.state.is_alive = False
-                        self.log("Result", "System", "Death", f"{target} was HANGED by the town!")
-                        print(f"💀💀💀 {target} IS DEAD 💀💀💀")
-                        # Check role reveal?
-                        self.log("Result", "System", "Reveal", f"{target} was {eliminated.state.role}")
+                        target = winners[0]
+
+                    # KILL
+                    eliminated = self.active_players[target]
+                    eliminated.state.is_alive = False
+                    self.log("Result", "System", "Death", f"{target} was HANGED by the town!")
+                    print(f"💀💀💀 {target} IS DEAD 💀💀💀")
+                    # Check role reveal?
+                    self.log("Result", "System", "Reveal", f"{target} was {eliminated.state.role}")
 
             # Check Win again before Night
             # ... (Implicitly handled at loop start)
@@ -258,7 +295,7 @@ class GameEngine:
                         print(f"\n💭 👺 {m_player.state.name} (Mafia) Thinking: {output.thought}")
 
                         target = output.vote
-                        self.log("Night", m_player.state.name, "whisper", f"Suggests killing {target}: {output.speech}", is_secret=True, vote_target=target)
+                        self.log("Night", m_player.state.name, "whisper", f"Suggests killing {target}: {output.speech or ''}", is_secret=True, vote_target=target)
                         if target:
                             mafia_votes[target] = mafia_votes.get(target, 0) + 1
                     except Exception as e:
@@ -270,7 +307,16 @@ class GameEngine:
                 self.log("Night", "System", "VoteSummary", f"Mafia Votes: {tally_str}", is_secret=True)
 
                 if mafia_votes:
-                    kill_target, _ = max(mafia_votes.items(), key=lambda x: x[1])
+                    max_votes = max(mafia_votes.values())
+                    winners = [k for k, v in mafia_votes.items() if v == max_votes]
+                    
+                    if len(winners) > 1:
+                        import random
+                        kill_target = random.choice(winners)
+                        self.log("Night", "System", "TieBreak", f"Mafia Tie {winners}. Randomly chose: {kill_target}", is_secret=True)
+                    else:
+                        kill_target = winners[0]
+
                     # Execute Kill
                     if kill_target in self.active_players and self.active_players[kill_target].state.is_alive:
                         victim = self.active_players[kill_target]

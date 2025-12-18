@@ -4,12 +4,12 @@ from uuid import uuid4
 
 class TurnOutput(BaseModel):
     thought: str = Field(..., description="Internal reasoning about the game state")
-    speech: str = Field(..., description="Public statement to the town (max 4 sentences)")
+    speech: Optional[str] = Field("", description="Public statement to the town (max 4 sentences)")
     vote: Optional[str] = Field(None, description="Name of player to vote for (or None if not voting phase)")
 
 class LogEntry(BaseModel):
     turn: int
-    phase: Literal["Day", "Night", "Voting", "Setup", "KillReveal"]
+    phase: Literal["Day", "Night", "Voting", "Setup", "KillReveal", "Result"]
     actor: str
     action: str  # speak, vote, kill, die, system
     content: str
@@ -25,7 +25,7 @@ class PlayerState(BaseModel):
 class GameState(BaseModel):
     game_id: str = Field(default_factory=lambda: str(uuid4()))
     turn: int = 1
-    phase: Literal["Day", "Night", "Voting", "Setup"] = "Setup"
+    phase: Literal["Day", "Night", "Voting", "Setup", "Result"] = "Setup"
     players: List[PlayerState] = []
     public_logs: List[LogEntry] = []
     mafia_logs: List[LogEntry] = [] # Secret logs for Mafia eyes only
