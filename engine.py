@@ -8,17 +8,17 @@ from schemas import GameState, LogEntry, TurnOutput
 # Config for Roster
 ROSTER_CONFIG = [
     # OPENAI
-    {"name": "5 Nano", "provider": "openai", "model": "gpt-5-nano"},
-    {"name": "4o Mini", "provider": "openai", "model": "gpt-4o-mini"},
+    {"name": "Nano 5", "provider": "openai", "model": "gpt-5-nano"},
+    {"name": "Mini 4o", "provider": "openai", "model": "gpt-4o-mini"},
     # ANTHROPIC
-    {"name": "3.5 Haiku", "provider": "anthropic", "model": "claude-3-5-haiku-20241022"}, 
-    {"name": "3 Haiku", "provider": "anthropic", "model": "claude-3-haiku-20240307"},
+    {"name": "Haiku 3.5", "provider": "anthropic", "model": "claude-3-5-haiku-20241022"}, 
+    {"name": "Haiku 3", "provider": "anthropic", "model": "claude-3-haiku-20240307"},
     # GOOGLE
-    {"name": "3 Flash", "provider": "google", "model": "gemini-3-flash-preview"},
-    {"name": "2.5 Flash-Lite", "provider": "google", "model": "gemini-2.5-flash-lite"},
-    # XAI
-    {"name": "Grok 2 (1212)", "provider": "xai", "model": "grok-2-1212"},
-    {"name": "Grok 4.1", "provider": "xai", "model": "grok-beta"}, # Using beta as alias for 4.1 per docs
+    {"name": "Flash 3", "provider": "google", "model": "gemini-3-flash-preview"},
+    {"name": "Flash-Lite 2.5", "provider": "google", "model": "gemini-2.5-flash-lite"},
+    # GROQ
+    {"name": "GPT OSS 120B", "provider": "groq", "model": "llama-3.3-70b-versatile"}, # Fallback to 3.3
+    {"name": "Scout 4", "provider": "groq", "model": "llama-3.1-8b-instant"}, # Fallback to 3.1
 ]
 
 import shutil
@@ -46,9 +46,13 @@ class GameEngine:
         )
         if is_secret:
             self.state.mafia_logs.append(entry)
+            print(f"\n[{phase.upper()}][SECRET] {actor}  {content}")
         else:
             self.state.public_logs.append(entry)
-            print(f"\n[{phase.upper()}] {actor}: {content}")
+            # User Request: "One space and the model name, two spaces and then model name" (?)
+            # Interpreted as: "1. Name  Content"
+            # Since 'actor' now contains "1. Name", we just need the "  " separator.
+            print(f"\n[{phase.upper()}] {actor}  {content}")
 
     def setup_game(self):
         print("Initializing Game...")
@@ -116,7 +120,7 @@ class GameEngine:
             
             # 1. Speaking Round
             living = self._get_living_players()
-            random.shuffle(living) # Randomize speaking order
+            # Order stays fixed (ROSTER order) per user request
             
             self.log("Day", "System", "Info", f"Alive: {', '.join(p.state.name for p in living)}")
 

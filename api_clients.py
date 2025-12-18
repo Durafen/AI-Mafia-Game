@@ -23,25 +23,29 @@ class UnifiedLLMClient:
         
 
         
-        # xAI uses OpenAI SDK with a different base URL
-        # User indicates key might be stored as GROQ_API_KEY
-        xai_key = os.getenv("XAI_API_KEY") or os.getenv("GROQ_API_KEY")
+        # xAI (Grok)
         self.xai_client = OpenAI(
-            api_key=xai_key,
+            api_key=os.getenv("XAI_API_KEY"),
             base_url="https://api.x.ai/v1",
+        )
+        
+        # Groq (Llama) - Optional, kept if user wants to switch back
+        self.groq_client = OpenAI(
+            api_key=os.getenv("GROQ_API_KEY"),
+            base_url="https://api.groq.com/openai/v1",
         )
 
     def _log_debug(self, player_name: str, turn: int, prompt: str, response: str):
         if not self.debug:
             return
         
-        # Log Prompt
-        with open(f"logs/{player_name}_prompt_{turn}.txt", "w", encoding="utf-8") as f:
-            f.write(prompt)
+        # Log Prompt (Disabled per user request)
+        # with open(f"logs/{player_name}_prompt_{turn}.txt", "w", encoding="utf-8") as f:
+        #     f.write(prompt)
             
-        # Log Response
-        with open(f"logs/{player_name}_response_{turn}.txt", "w", encoding="utf-8") as f:
-            f.write(response)
+        # Log Response (Disabled per user request)
+        # with open(f"logs/{player_name}_response_{turn}.txt", "w", encoding="utf-8") as f:
+        #     f.write(response)
             
         # Append to History
         with open(f"logs/{player_name}_history.txt", "a", encoding="utf-8") as f:
@@ -80,11 +84,11 @@ class UnifiedLLMClient:
                 response_text = response.choices[0].message.content
 
             elif provider == "xai": # Grok
-                # Grok might not support strict json_object mode in all models yet, but we request it.
-                # If "json_object" fails, standard invocation.
+                model = model_name
+                # Grok Support for json_object
                 try:
                     response = self.xai_client.chat.completions.create(
-                        model=model_name,
+                        model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": turn_prompt}
@@ -92,13 +96,25 @@ class UnifiedLLMClient:
                         response_format={"type": "json_object"}
                     )
                 except:
+                     # Fallback if json_object not supported by specific beta
                      response = self.xai_client.chat.completions.create(
-                        model=model_name,
+                        model=model,
                         messages=[
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": turn_prompt + "\n\nProvide your response in JSON format."}
                         ]
                     )
+                response_text = response.choices[0].message.content
+
+            elif provider == "groq":
+                response = self.groq_client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": turn_prompt},
+                    ],
+                    response_format={"type": "json_object"}
+                )
                 response_text = response.choices[0].message.content
 
             elif provider == "anthropic":

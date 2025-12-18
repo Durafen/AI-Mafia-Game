@@ -20,6 +20,7 @@ class PlayerState(BaseModel):
     is_alive: bool = True
     provider: str
     model_name: str # Technical API model name
+    previous_thoughts: List[str] = []
 
 class GameState(BaseModel):
     game_id: str = Field(default_factory=lambda: str(uuid4()))

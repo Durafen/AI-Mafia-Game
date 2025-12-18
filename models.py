@@ -57,29 +57,35 @@ Schema:
         prompt += f"Dead Players: {', '.join(dead)}\n\n"
 
         # 2. Recent Events (Logs)
-        # Show last 15 public events to keep context manageable
-        prompt += "--- PUBLIC LOG (Last 15 events) ---\n"
-        for log in game_state.public_logs[-15:]:
+        # Show FULL logs as requested (conciseness enforced by 50-word limit on generation)
+        prompt += "--- PUBLIC LOG ---\n"
+        for log in game_state.public_logs:
             prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
         # 3. Mafia Secrets (If Mafia)
         if self.state.role == "Mafia":
             prompt += "\n--- SECRET MAFIA LOG ---\n"
-            for log in game_state.mafia_logs[-10:]:
+            for log in game_state.mafia_logs:
                 prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
-        # 4. Instructions
+        # 4. Memory (Previous Thoughts)
+        if self.state.previous_thoughts:
+            prompt += "\n--- YOUR PREVIOUS THOUGHTS ---\n"
+            for t in self.state.previous_thoughts:
+                prompt += f"- {t}\n"
+
+        # 5. Instructions
         prompt += "\nIt is your turn to speak.\n"
         
         if game_state.phase == "Voting":
              prompt += "This is the VOTING phase. You MUST choose someone to hang.\n"
-             prompt += "Provide your speech explaining your vote (max 4 sentences) and your vote choice.\n"
+             prompt += "Provide your speech explaining your vote (max 50 words) and your vote choice.\n"
         elif game_state.phase == "Night":
              prompt += "It is NIGHT. You are whispering to your partner. Decide who to kill.\n"
              prompt += "Provide your thought and a target to kill in the 'vote' field.\n"
         else:
              prompt += "It is DAY. Discuss, defend yourself, or accuse others.\n"
-             prompt += "Speak concisely (max 4 sentences). You are NOT voting yet, so set 'vote' to null.\n"
+             prompt += "Speak concisely (max 50 words). You are NOT voting yet, so set 'vote' to null.\n"
 
         return prompt
 
@@ -87,7 +93,7 @@ Schema:
         system_prompt = self._build_system_prompt()
         turn_prompt = self._build_turn_prompt(game_state)
         
-        return self.client.generate_turn(
+        output = self.client.generate_turn(
             player_name=self.state.name,
             provider=self.state.provider,
             model_name=self.state.model_name,
@@ -95,3 +101,9 @@ Schema:
             turn_prompt=turn_prompt,
             turn_number=turn_number
         )
+
+        # Save thought to memory
+        if output.thought:
+            self.state.previous_thoughts.append(f"Day {turn_number}: {output.thought}")
+        
+        return output
