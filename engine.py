@@ -20,7 +20,7 @@ ROSTER_CONFIG = [
     {"name": "Sonnet", "provider": "anthropic", "model": "sonnet", "voice": "en-AU-WilliamNeural"},
 
     # GOOGLE
-    {"name": "Gemini 2.5 Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-IN-PrabhatNeural"},
+    {"name": "Gemini 2.5 Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-NZ-MitchellNeural"},
     {"name": "Gemini 2.5 Flash", "provider": "google", "model": "gemini-2.5-flash", "voice": "en-IE-ConnorNeural"},
     {"name": "Gemini 3 Flash", "provider": "google", "model": "gemini-3-flash-preview", "voice": "en-CA-LiamNeural"},
 
@@ -34,6 +34,7 @@ import shutil
 import os
 import tempfile
 import subprocess
+import threading
 from datetime import datetime
 
 try:
@@ -44,24 +45,46 @@ except ImportError:
 
 
 class TTSEngine:
-    """Edge TTS wrapper for voice synthesis"""
+    """Edge TTS wrapper with background playback support"""
 
     def __init__(self, enabled: bool = True, rate: str = TTS_RATE):
         self.enabled = enabled and EDGE_TTS_AVAILABLE
         self.rate = rate
         self._voice_map = {}  # player_name -> voice_id
+        self._current_thread = None  # Track current TTS thread
         if enabled and not EDGE_TTS_AVAILABLE:
             print("[TTS] edge-tts not installed. Run: pip install edge-tts")
 
     def register_player(self, name: str, voice: str):
         self._voice_map[name] = voice
 
-    def speak(self, text: str, player_name: str = None, voice: str = None):
+    def wait_for_speech(self):
+        """Wait for current speech to finish"""
+        if self._current_thread and self._current_thread.is_alive():
+            self._current_thread.join()
+
+    def speak(self, text: str, player_name: str = None, voice: str = None, background: bool = False):
+        """Speak text. If background=True, runs in background thread."""
         if not self.enabled or not text or not text.strip():
             return
         use_voice = voice or self._voice_map.get(player_name, "en-US-AriaNeural")
+
+        if background:
+            # Wait for any previous speech to finish first
+            self.wait_for_speech()
+            # Start new speech in background
+            self._current_thread = threading.Thread(
+                target=self._speak_sync, args=(text, use_voice), daemon=True
+            )
+            self._current_thread.start()
+        else:
+            # Blocking speech
+            self._speak_sync(text, use_voice)
+
+    def _speak_sync(self, text: str, voice: str):
+        """Synchronous speech (runs TTS and plays audio)"""
         try:
-            asyncio.run(self._speak_async(text, use_voice))
+            asyncio.run(self._speak_async(text, voice))
         except Exception as e:
             print(f"[TTS Error] {e}")
 
@@ -113,9 +136,9 @@ class GameEngine:
         except:
             pass
 
-    def _announce(self, text: str):
+    def _announce(self, text: str, background: bool = False):
         """Speak system announcement with narrator voice"""
-        self.tts.speak(text, voice=NARRATOR_VOICE)
+        self.tts.speak(text, voice=NARRATOR_VOICE, background=background)
 
     def log(self, phase: str, actor: str, action: str, content: str, is_secret: bool = False, vote_target: str = None):
         # Determine display name with number if actor is a player
@@ -260,8 +283,11 @@ class GameEngine:
 
     def run(self):
         self.setup_game()
-        
+
         while True:
+            # Wait for any remaining TTS before checking win
+            self.tts.wait_for_speech()
+
             # Check Win Condition
             if self.check_game_over():
                 break
@@ -290,31 +316,41 @@ class GameEngine:
             self.log("Day", "System", "Info", f"Alive: {', '.join(p.state.name for p in living)}")
 
             for player in ordered_living:
-                self._wait_for_next()
                 try:
+                    # Generate while previous TTS might still be playing
                     output = player.take_turn(self.state, self.state.turn)
+
+                    # Wait for previous TTS before displaying new output
+                    self.tts.wait_for_speech()
+
                     # Print Thought to Terminal
                     prefix = "👺 " if player.state.role == "Mafia" else ""
                     self._print(f"\n💭 {prefix}{player.state.name} Thinking: {output.thought}")
-                    
+
                     # Construct content with bracketed action if present
                     speech = output.speech or ""
                     action_part = ""
 
                     # Capture nomination if present (Day 2+)
+                    spoken_action = ""
                     if self.state.turn > 1 and output.vote:
                          nominations[player.state.name] = output.vote
                          action_part = f"[Nominated {output.vote}] "
+                         spoken_action = f"I nominate {output.vote}."
 
                     content = f"{action_part}{speech}"
                     self.log("Day", player.state.name, "speak", content)
 
-                    # TTS for player speech
-                    if output.speech:
-                        self.tts.speak(output.speech, player.state.name)
+                    # Start TTS in background with speech + nomination
+                    tts_text = f"{speech} {spoken_action}".strip() if speech else spoken_action
+                    if tts_text:
+                        self.tts.speak(tts_text, player.state.name, background=True)
 
                 except Exception as e:
                     self.log("Day", player.state.name, "error", f"Failed to speak: {e}")
+
+                # User can press Enter while TTS plays to trigger next generation
+                self._wait_for_next()
 
             # 2. Defense & Voting Round (Skip on Day 1)
             if self.state.turn > 1:
@@ -340,26 +376,35 @@ class GameEngine:
                         # Find player object
                         nom_player = next((p for p in living if p.state.name == nom_name), None)
                         if not nom_player: continue
-                        
-                        self._wait_for_next()
+
                         try:
-                            # Defense Turn
+                            # Generate while previous TTS might still be playing
                             output = nom_player.take_turn(self.state, self.state.turn)
+
+                            # Wait for previous TTS before displaying
+                            self.tts.wait_for_speech()
+
                             self._print(f"\n💭 {nom_player.state.name} Defending: {output.thought}")
                             self.log("Defense", nom_player.state.name, "speak", f"[Defense] {output.speech or ''}")
 
-                            # TTS for defense speech
+                            # TTS for defense speech in background
                             if output.speech:
-                                self.tts.speak(output.speech, nom_player.state.name)
+                                self.tts.speak(output.speech, nom_player.state.name, background=True)
                         except Exception as e:
                             self._print(f"Error defending: {e}")
+
+                        # User can press Enter while TTS plays
+                        self._wait_for_next()
                 else:
                     self.log("Day", "System", "Info", "No valid nominations. Skipping Defense.")
 
                 # --- VOTING PHASE ---
+                # Wait for any remaining Defense TTS
+                self.tts.wait_for_speech()
+
                 self.state.phase = "Voting"
                 self._print("\n🗳️  VOTING TIME 🗳️")
-                
+
                 final_votes = {} # PlayerName -> TargetName
 
                 for player in living:
@@ -421,18 +466,29 @@ class GameEngine:
                         
                         # --- LAST WORDS PHASE ---
                         self.state.phase = "LastWords"
-                        self._print(f"\n💀 {v_name} - LAST WORDS 💀")
+
                         try:
-                            self._wait_for_next()
+                            # Generate while previous TTS might still be playing
                             output = victim.take_turn(self.state, self.state.turn)
+
+                            # Wait for previous TTS before displaying
+                            self.tts.wait_for_speech()
+
+                            self._print(f"\n💀 {v_name} - LAST WORDS 💀")
                             self._print(f"\n💭 {victim.state.name} LastWords: {output.thought}")
                             self.log("LastWords", victim.state.name, "speak", f"[Last Words] {output.speech or ''}")
 
-                            # TTS for last words
+                            # TTS for last words in background
                             if output.speech:
-                                self.tts.speak(output.speech, victim.state.name)
+                                self.tts.speak(output.speech, victim.state.name, background=True)
                         except Exception as e:
                             self.log("LastWords", victim.state.name, "error", f"Failed to speak last words: {e}")
+
+                        # User can press Enter while TTS plays
+                        self._wait_for_next()
+
+                        # Wait for last words TTS before death announcement
+                        self.tts.wait_for_speech()
 
                         # Execute Kill
                         victim.state.is_alive = False
@@ -442,6 +498,9 @@ class GameEngine:
                         self.log("Result", "System", "Info", f"{v_name} is dead.")
 
             self._wait_for_next()
+
+            # Wait for any remaining TTS before checking win
+            self.tts.wait_for_speech()
 
             # Check Win again before Night
             if self.check_game_over():
@@ -462,36 +521,47 @@ class GameEngine:
                 
                 mafia_votes = {}
                 for m_player in mafia_alive:
-                    self._wait_for_next() # Admin steps through night too?
                     try:
-                        # Mafia player "votes" for kill
+                        # Generate while previous TTS might still be playing
                         output = m_player.take_turn(self.state, self.state.turn)
-                        
+
+                        # Wait for previous TTS before displaying
+                        self.tts.wait_for_speech()
+
                         self._print(f"\n💭 👺 {m_player.state.name} (Mafia) Thinking: {output.thought}")
 
                         target = output.vote
                         action_tag = f"[Suggests killing {target}] " if target else ""
+                        spoken_action = f"I suggest killing {target}." if target else ""
                         content = f"{action_tag}{output.speech or ''}"
                         self.log("Night", m_player.state.name, "whisper", content, is_secret=True)
 
-                        # TTS for mafia whisper
-                        if output.speech:
-                            self.tts.speak(output.speech, m_player.state.name)
+                        # TTS for mafia whisper in background with kill suggestion
+                        speech = output.speech or ""
+                        tts_text = f"{speech} {spoken_action}".strip() if speech else spoken_action
+                        if tts_text:
+                            self.tts.speak(tts_text, m_player.state.name, background=True)
 
                         if target:
                             mafia_votes[target] = mafia_votes.get(target, 0) + 1
                     except Exception as e:
                         self._print(f"Mafia Error: {e}")
 
+                    # User can press Enter while TTS plays
+                    self._wait_for_next()
+
                 # Consensus Summary
                 tally_parts = [f"{k} ({v})" for k,v in mafia_votes.items()]
                 tally_str = ", ".join(tally_parts) if tally_parts else "No votes"
                 self.log("Night", "System", "VoteSummary", f"Mafia Votes: {tally_str}", is_secret=True)
 
+                # Wait for last mafia TTS to finish before summary
+                self.tts.wait_for_speech()
+
                 if mafia_votes:
                     max_votes = max(mafia_votes.values())
                     winners = [k for k, v in mafia_votes.items() if v == max_votes]
-                    
+
                     if len(winners) > 1:
                         import random
                         kill_target = random.choice(winners)
