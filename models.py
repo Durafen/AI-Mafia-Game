@@ -111,8 +111,13 @@ Schema:
              prompt += "Set 'vote' to null.\n"
         elif game_state.phase == "LastWords":
              prompt += "The town has voted to ELIMINATE you. You are about to die.\n"
-             prompt += "This is your LAST WORD. Say your final goodbye or curse the town.\n"
+             prompt += "This is your LAST WORD.\n"
+             if self.state.role == "Mafia":
+                 prompt += "Say goodbye and help the mafia (clue to partner or deceive town).\n"
+             else:
+                 prompt += "Say goodbye and help the villagers (share suspicions).\n"
              prompt += "Set 'vote' to null.\n"
+
         elif game_state.phase == "Night":
              prompt += "It is NIGHT. You are whispering to your partner. Decide who to kill.\n"
              prompt += "Provide your thought and a target to kill in the 'vote' field.\n"
@@ -124,8 +129,8 @@ Schema:
                  prompt += "Set 'vote' to null.\n"
              else:
                  prompt += "You can nominate someone for elimination using the 'vote' field.\n"
-                 prompt += "Any player who is nominated will have to DEFEND themselves before the final vote.\n"
-                 prompt += "Final votes are RESTRICTED to nominees.\n"
+                 prompt += "Any player who is nominated will have to defend themselves before the final vote.\n"
+                 prompt += "Final votes are restricted to nominees.\n"
                  prompt += "Suggest a target in 'vote', or set it to null if undecided.\n"
 
         return prompt

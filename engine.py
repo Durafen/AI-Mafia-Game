@@ -13,20 +13,20 @@ AUTO_CONTINUE = True # Set to True to run without user intervention
 # Config for Roster (with TTS voices)
 ROSTER_CONFIG = [
     # OPENAI
-    {"name": "GPT 5.2", "provider": "openai", "model": "gpt-5.2", "voice": "en-US-GuyNeural"},
-    {"name": "GPT 5.1", "provider": "openai", "model": "gpt-5.1", "voice": "en-US-ChristopherNeural"},
+    {"name": "GPT2", "provider": "openai", "model": "gpt-5.2", "voice": "en-US-GuyNeural"},
+    {"name": "GPT1", "provider": "openai", "model": "gpt-5.1", "voice": "en-US-ChristopherNeural"},
 
     # ANTHROPIC
     {"name": "Haiku", "provider": "anthropic", "model": "haiku", "voice": "en-GB-RyanNeural"},
     {"name": "Sonnet", "provider": "anthropic", "model": "sonnet", "voice": "en-AU-WilliamNeural"},
 
     # GOOGLE
-    {"name": "Gemini 2.5 Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-NZ-MitchellNeural"},
-    {"name": "Gemini 2.5 Flash", "provider": "google", "model": "gemini-2.5-flash", "voice": "en-IE-ConnorNeural"},
-    {"name": "Gemini 3 Flash", "provider": "google", "model": "gemini-3-flash-preview", "voice": "en-CA-LiamNeural"},
+    {"name": "Gemini Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-NZ-MitchellNeural"},
+    {"name": "Gemini Flash", "provider": "google", "model": "gemini-2.5-flash", "voice": "en-IE-ConnorNeural"},
+    {"name": "Gemini Preview", "provider": "google", "model": "gemini-3-flash-preview", "voice": "en-CA-LiamNeural"},
 
     # GROQ (Qwen)
-    {"name": "Qwen Coder", "provider": "groq", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
+    {"name": "Qwen", "provider": "groq", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
 ]
 
 NARRATOR_VOICE = "en-US-AriaNeural"
@@ -112,7 +112,9 @@ class TTSEngine:
             self._current_thread.start()
         else:
             # Blocking speech
+            self.wait_for_speech()
             self._speak_sync(text, use_voice)
+
 
     def _speak_sync(self, text: str, voice: str):
         """Synchronous speech (runs TTS and plays audio)"""
@@ -352,16 +354,16 @@ class GameEngine:
                 rotated_roster = self.players[start_idx:] + self.players[:start_idx]
                 ordered_living = [p for p in rotated_roster if p.state.is_alive]
                 
-                first_speaker_name = ordered_living[0].state.name if ordered_living else "None"
-                
-                self.log("Day", "System", "SpeakerInfo", f"[First Speaker: {first_speaker_name}]")
+
     
                 # 1. Speaking Round
                 living = self._get_living_players()
                 # Track nominations (suggestions)
                 nominations = {} # PlayerName -> VoteTarget
     
-                self.log("Day", "System", "Info", f"Alive: {', '.join(p.state.name for p in living)}")
+                self.log("Day", "System", "Info", f"Alive (Speak Order): {', '.join(p.state.name for p in ordered_living)}")
+
+
     
                 for player in ordered_living:
                     try:
@@ -419,6 +421,8 @@ class GameEngine:
                         
                         nominee_display = [f"{n} ({nominee_counts[n]})" for n in nominees]
                         self.log("Defense", "System", "PhaseStart", f"Nominees for elimination: {', '.join(nominee_display)}")
+                        self._announce(f"Nominees for elimination are: {', '.join(nominee_display)}")
+
                         
                         for nom_name in nominees:
                             # Find player object
@@ -452,6 +456,8 @@ class GameEngine:
     
                     self.state.phase = "Voting"
                     self._print("\n🗳️  VOTING TIME 🗳️")
+                    self._announce("It is voting time.")
+
     
                     final_votes = {} # PlayerName -> TargetName
     
@@ -503,6 +509,7 @@ class GameEngine:
                     tally_parts = [f"{k} ({v})" for k,v in votes.items()]
                     tally_str = ", ".join(tally_parts) if tally_parts else "No votes"
                     self.log("Voting", "System", "VoteSummary", f"Votes Cast: {tally_str}")
+                    self._announce(f"Votes Cast: {tally_str}")
     
                     if not votes:
                         self.log("Result", "System", "NoLynch", "No votes cast.")
