@@ -125,6 +125,7 @@ Schema:
              else:
                  prompt += "You can nominate someone for elimination using the 'vote' field.\n"
                  prompt += "Any player who is nominated will have to DEFEND themselves before the final vote.\n"
+                 prompt += "Final votes are RESTRICTED to nominees.\n"
                  prompt += "Suggest a target in 'vote', or set it to null if undecided.\n"
 
         return prompt

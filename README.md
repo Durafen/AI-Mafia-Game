@@ -60,6 +60,12 @@ python main.py
 ```
 Follow the on-screen prompts. You will need to press `ENTER` to advance the game state after each agent moves, allowing you to read specific turns.
 
+### Autoplay & Pause ⏯️
+If `AUTO_CONTINUE = True` is set in `engine.py`, the game will proceed automatically.
+*   **Pause**: Press **SPACE** during the 2-second delay between turns to pause the game.
+*   **Resume**: Press **SPACE** again to resume.
+
+
 ---
 
 ## ⚙️ Configuration & Modes
