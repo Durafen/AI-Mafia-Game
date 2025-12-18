@@ -1,0 +1,220 @@
+import random
+import asyncio
+from typing import List, Dict
+from models import Player
+from api_clients import UnifiedLLMClient
+from schemas import GameState, LogEntry, TurnOutput
+
+# Config for Roster
+ROSTER_CONFIG = [
+    # OPENAI
+    {"name": "5 Nano", "provider": "openai", "model": "gpt-5-nano"},
+    {"name": "4o Mini", "provider": "openai", "model": "gpt-4o-mini"},
+    # ANTHROPIC
+    {"name": "3.5 Haiku", "provider": "anthropic", "model": "claude-3-5-haiku-20241022"}, 
+    {"name": "3 Haiku", "provider": "anthropic", "model": "claude-3-haiku-20240307"},
+    # GOOGLE
+    {"name": "3 Flash", "provider": "google", "model": "gemini-3-flash-preview"},
+    {"name": "2.5 Flash-Lite", "provider": "google", "model": "gemini-2.5-flash-lite"},
+    # XAI
+    {"name": "Grok 2 (1212)", "provider": "xai", "model": "grok-2-1212"},
+    {"name": "Grok 4.1", "provider": "xai", "model": "grok-beta"}, # Using beta as alias for 4.1 per docs
+]
+
+import shutil
+import os
+
+class GameEngine:
+    def __init__(self):
+        # Clean Logs
+        if os.path.exists("logs"):
+            shutil.rmtree("logs")
+        os.makedirs("logs", exist_ok=True)
+        
+        self.client = UnifiedLLMClient(debug=True)
+        self.state = GameState()
+        self.players: List[Player] = []
+        self.active_players: Dict[str, Player] = {} # Name -> Player obj
+
+    def log(self, phase: str, actor: str, action: str, content: str, is_secret: bool = False):
+        entry = LogEntry(
+            turn=self.state.turn,
+            phase=phase,
+            actor=actor,
+            action=action,
+            content=content
+        )
+        if is_secret:
+            self.state.mafia_logs.append(entry)
+        else:
+            self.state.public_logs.append(entry)
+            print(f"\n[{phase.upper()}] {actor}: {content}")
+
+    def setup_game(self):
+        print("Initializing Game...")
+        # Randomize Roles: 2 Mafia, 6 Villagers
+        indices = list(range(8))
+        random.shuffle(indices)
+        mafia_indices = set(indices[:2])
+
+        mafia_names = []
+        
+        # Create Players
+        for i, config in enumerate(ROSTER_CONFIG):
+            role = "Mafia" if i in mafia_indices else "Villager"
+            p = Player(
+                name=config["name"],
+                role=role,
+                provider=config["provider"],
+                model_name=config["model"],
+                client=self.client
+            )
+            self.players.append(p)
+            self.state.players.append(p.state)
+            self.active_players[p.state.name] = p
+            if role == "Mafia":
+                mafia_names.append(p.state.name)
+
+        # Introduce Partners
+        for p in self.players:
+            if p.state.role == "Mafia":
+                partner = [n for n in mafia_names if n != p.state.name]
+                if partner:
+                    p.set_partner(partner[0])
+
+        print(f"[System] Game Initialized. Mafia are: {', '.join(mafia_names)}")
+        self.log("Setup", "System", "GameStart", "Game Initialized. Roles have been assigned.")
+        self.log("Setup", "System", "MafiaReveal", f"The Mafia team is: {', '.join(mafia_names)}", is_secret=True)
+
+    def _get_living_players(self) -> List[Player]:
+        return [p for p in self.players if p.state.is_alive]
+
+    def _wait_for_next(self):
+        input("\n[PRESS ENTER TO CONTINUE NEXT ACTION] >> ")
+
+    def run(self):
+        self.setup_game()
+        
+        while True:
+            # Check Win Condition
+            mafia_count = sum(1 for p in self._get_living_players() if p.state.role == "Mafia")
+            town_count = sum(1 for p in self._get_living_players() if p.state.role == "Villager")
+            
+            if mafia_count == 0:
+                print("\n🎉 TOWN WINS! All Mafia eliminated. 🎉")
+                break
+            if mafia_count >= town_count:
+                print("\n💀 MAFIA WINS! They have parity with Town. 💀")
+                break
+
+            # --- DAY PHASE ---
+            self.state.phase = "Day"
+            print(f"\n☀️  DAY {self.state.turn} STARTS ☀️")
+            
+            # Skip speech loop on Day 1? No, user said "Day 1... No voting". implied speech OK.
+            # "Day cycle... speak... move to next... then vote."
+            
+            # 1. Speaking Round
+            living = self._get_living_players()
+            random.shuffle(living) # Randomize speaking order
+            
+            self.log("Day", "System", "Info", f"Alive: {', '.join(p.state.name for p in living)}")
+
+            for player in living:
+                self._wait_for_next()
+                try:
+                    output = player.take_turn(self.state, self.state.turn)
+                    self.log("Day", player.state.name, "speak", output.speech)
+                except Exception as e:
+                    self.log("Day", player.state.name, "error", f"Failed to speak: {e}")
+
+            # 2. Voting Round (Skip on Day 1)
+            if self.state.turn > 1:
+                self.state.phase = "Voting"
+                print("\n🗳️  VOTING TIME 🗳️")
+                votes = {} # target -> count
+                
+                for player in living:
+                    self._wait_for_next()
+                    try:
+                        output = player.take_turn(self.state, self.state.turn)
+                        vote_target = output.vote
+                        
+                        # Validate vote
+                        if vote_target not in [p.state.name for p in living]:
+                            vote_target = "Skip" # Invalid vote
+                        
+                        self.log("Voting", player.state.name, "vote", f"Voted for {vote_target} | Reason: {output.speech}")
+                        
+                        if vote_target != "Skip":
+                            votes[vote_target] = votes.get(vote_target, 0) + 1
+                    except Exception as e:
+                        print(f"Error voting: {e}")
+
+                # Tally
+                if not votes:
+                    self.log("Result", "System", "NoLynch", "No votes cast.")
+                else:
+                    target, count = max(votes.items(), key=lambda x: x[1])
+                    # Check Tie
+                    max_votes = count
+                    winners = [k for k, v in votes.items() if v == max_votes]
+                    
+                    if len(winners) > 1:
+                        self.log("Result", "System", "Tie", f"Tie between {winners}. No one dies.")
+                    else:
+                        # KILL
+                        eliminated = self.active_players[target]
+                        eliminated.state.is_alive = False
+                        self.log("Result", "System", "Death", f"{target} was HANGED by the town!")
+                        print(f"💀💀💀 {target} IS DEAD 💀💀💀")
+                        # Check role reveal?
+                        self.log("Result", "System", "Reveal", f"{target} was {eliminated.state.role}")
+
+            # Check Win again before Night
+            # ... (Implicitly handled at loop start)
+
+            # --- NIGHT PHASE ---
+            self.state.phase = "Night"
+            print(f"\n🌙 NIGHT {self.state.turn} FALLS 🌙")
+            
+            mafia_alive = [p for p in self._get_living_players() if p.state.role == "Mafia"]
+            
+            if not mafia_alive:
+                # Game over loop will catch this next iter
+                pass
+            else:
+                self.log("Night", "System", "MafiaWake", "The Mafia wakes up...", is_secret=True)
+                
+                mafia_votes = {}
+                for m_player in mafia_alive:
+                    self._wait_for_next() # Admin steps through night too?
+                    try:
+                        # Mafia player "votes" for kill
+                        output = m_player.take_turn(self.state, self.state.turn)
+                        target = output.vote
+                        self.log("Night", m_player.state.name, "whisper", f"Suggests killing {target}: {output.speech}", is_secret=True)
+                        if target:
+                            mafia_votes[target] = mafia_votes.get(target, 0) + 1
+                    except Exception as e:
+                        print(f"Mafia Error: {e}")
+
+                # Consensus
+                if mafia_votes:
+                    kill_target, _ = max(mafia_votes.items(), key=lambda x: x[1])
+                    # Execute Kill
+                    if kill_target in self.active_players and self.active_players[kill_target].state.is_alive:
+                        victim = self.active_players[kill_target]
+                        victim.state.is_alive = False
+                        self.log("Night", "System", "Kill", f"The Mafia killed {kill_target}")
+                        print(f"\n🩸 TRAGEDY! {kill_target} was found DEAD in the morning.🩸")
+                    else:
+                         self.log("Night", "System", "Fail", "Mafia targeted invalid player.")
+                else:
+                     self.log("Night", "System", "Quiet", "Mafia did not kill anyone.")
+
+            self.state.turn += 1
+
+if __name__ == "__main__":
+    engine = GameEngine()
+    engine.run()
