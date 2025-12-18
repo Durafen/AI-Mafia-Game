@@ -42,12 +42,12 @@ IMPORTANT: OUTPUT FORMAT
 You must respond in strict JSON format. Do not add markdown backticks.
 Schema:
 {
-  "thought": "Your internal reasoning about the game state (hidden from others)",
+  "thought": "Your internal reasoning about the game state (hidden from others). Max 200 words!",
 """
         # Dynamic Speech Description
-        speech_desc = "Your public statement to the town (max 4 sentences)"
+        speech_desc = "Your public statement to the town. Max 100 words!"
         if game_state.phase == "Night" and self.state.role == "Mafia":
-            speech_desc = "Your secret whisper to your partner (Hidden from Town)"
+            speech_desc = "Your secret whisper to your partner (Hidden from Town). Max 100 words!"
         
         prompt += f'  "speech": "{speech_desc}",\n'
 

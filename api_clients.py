@@ -13,30 +13,47 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Ensure logs directory exists
-os.makedirs("logs", exist_ok=True)
+# This line will be moved into the class's __init__ method
 
 class UnifiedLLMClient:
-    def __init__(self, debug: bool = True):
+    def __init__(self, debug: bool = True, log_dir: str = None):
         self.debug = debug
-        self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        self.anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+        self.log_dir = log_dir
         
-
+        # Initialize clients ONLY if keys are present (avoids error if using CLI only)
+        self.openai_client = None
+        if os.getenv("OPENAI_API_KEY"):
+            self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            
+        self.anthropic_client = None
+        if os.getenv("ANTHROPIC_API_KEY"):
+            self.anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
         
+        # Ensure log dir exists
+        if self.debug and self.log_dir:
+            os.makedirs(self.log_dir, exist_ok=True)
+            
         # xAI (Grok)
-        self.xai_client = OpenAI(
-            api_key=os.getenv("XAI_API_KEY"),
-            base_url="https://api.x.ai/v1",
-        )
+        self.xai_client = None
+        if os.getenv("XAI_API_KEY"):
+            self.xai_client = OpenAI(
+                api_key=os.getenv("XAI_API_KEY"),
+                base_url="https://api.x.ai/v1",
+            )
         
-        # Groq (Llama) - Optional, kept if user wants to switch back
-        self.groq_client = OpenAI(
-            api_key=os.getenv("GROQ_API_KEY"),
-            base_url="https://api.groq.com/openai/v1",
-        )
+        # Groq (Llama)
+        self.groq_client = None
+        if os.getenv("GROQ_API_KEY"):
+            self.groq_client = OpenAI(
+                api_key=os.getenv("GROQ_API_KEY"),
+                base_url="https://api.groq.com/openai/v1",
+            )
 
     def _log_debug(self, player_name: str, turn_number: int, prompt: str, response: str):
-        directory = f"logs"
+        if not self.log_dir:
+            return
+            
+        directory = self.log_dir
         if not os.path.exists(directory):
             os.makedirs(directory)
             
@@ -153,14 +170,17 @@ class UnifiedLLMClient:
         
         # Construct command based on tool specific syntax
         cmd = []
+        stdin_input = None
         
         if command == "codex":
             # codex exec --model <model> <prompt>
             cmd = ["codex", "exec", "--model", model, prompt]
             
         elif command == "claude":
-            # claude --print --output-format json --model <model> <prompt>
-            cmd = ["claude", "--print", "--output-format", "json", "--model", model, prompt]
+            # claude --print --output-format json --model <model> (prompt via stdin)
+            # We pass prompt via stdin to avoid ARG_MAX limits on large history
+            cmd = ["claude", "--print", "--output-format", "json", "--model", model]
+            stdin_input = prompt
             
         elif command == "gemini":
             # gemini --model <model> <prompt>
@@ -176,7 +196,7 @@ class UnifiedLLMClient:
         
         try:
             # Run command
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            result = subprocess.run(cmd, input=stdin_input, capture_output=True, text=True, check=True)
             return result.stdout
         except subprocess.CalledProcessError as e:
             # If command not found or fails
