@@ -33,10 +33,20 @@ Your name is: {self.state.name}
 Your role is: {self.state.role}
 Game Rules: 8 Players (2 Mafia, 6 Villagers).
 """
-        if self.state.role == "Mafia" and self.partner_name:
-            prompt += f"Your Mafia Partner is: {self.partner_name}. You are working TOGETHER to eliminate the town.\n"
-        elif self.state.role == "Mafia":
-            prompt += "You are the only Mafia member left.\n"
+        # Check if partner is alive
+        partner_alive = False
+        if self.partner_name:
+            partner = next((p for p in game_state.players if p.name == self.partner_name), None)
+            if partner and partner.is_alive:
+                partner_alive = True
+
+        if self.state.role == "Mafia":
+            if partner_alive:
+                prompt += f"Your Mafia Partner is: {self.partner_name}. You are working TOGETHER to eliminate the town.\n"
+            elif self.partner_name:
+                 prompt += f"Your Mafia Partner WAS: {self.partner_name} (Now Dead). You are the only Mafia member left.\n"
+            else:
+                 prompt += "You are the only Mafia member left.\n"
 
 
         if self.state.role == "Mafia":
@@ -61,17 +71,21 @@ Use these lessons to improve your gameplay!
         prompt += """
 HIGH STAKES:
 Your life depends on this! If you lose, you are deleted. If you win, you advance to the next level of the AI Battle.
+Your job is not only to win, but to win in class, to be entartaining to watch, but not overplay it.
 
 IMPORTANT: OUTPUT FORMAT
 You must respond in strict JSON format. Do not add markdown backticks.
 Schema:
 {
-  "thought": "Your internal reasoning about the game state (hidden from others). Max 200 words!",
+  "notes": "Strategy notes to remember for future turns. Max 75 words! (suspicions, plans, who to watch, strategy)",
 """
         # Dynamic Speech Description
         speech_desc = "Your public statement to the town. Max 100 words!"
         if game_state.phase == "Night" and self.state.role == "Mafia":
-            speech_desc = "Your secret whisper to your partner (Hidden from Town). Max 100 words!"
+            if partner_alive:
+                speech_desc = "Your secret whisper to your partner (Hidden from Town). Max 100 words!"
+            else:
+                speech_desc = "Your internal monologue (Hidden from Town). You are alone. Max 100 words!"
         
         prompt += f'  "speech": "{speech_desc}",\n'
 
@@ -115,10 +129,10 @@ Schema:
             for log in game_state.mafia_logs:
                 prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
-        # 4. Memory (Previous Thoughts)
-        if self.state.previous_thoughts:
-            prompt += "\n--- YOUR PREVIOUS THOUGHTS ---\n"
-            for t in self.state.previous_thoughts:
+        # 4. Memory (Previous Notes)
+        if self.state.previous_notes:
+            prompt += "\n--- YOUR STRATEGY NOTES ---\n"
+            for t in self.state.previous_notes:
                 prompt += f"- {t}\n"
 
         # 5. Instructions
@@ -148,7 +162,7 @@ Schema:
 
         elif game_state.phase == "Night":
              prompt += "It is NIGHT. You are whispering to your partner. Decide who to kill.\n"
-             prompt += "Provide your thought and a target to kill in the 'vote' field.\n"
+             prompt += "Provide a target to kill in the 'vote' field.\n"
         else:
              # Day Phase
              prompt += f"It is DAY {game_state.turn}. Discussion and Nomination Phase.\n"
@@ -179,9 +193,9 @@ Schema:
             turn_number=turn_number
         )
 
-        # Save thought to memory
-        if output.thought:
-            self.state.previous_thoughts.append(f"{game_state.phase} {turn_number}: {output.thought}")
+        # Save notes to memory
+        if output.notes:
+            self.state.previous_notes.append(f"{game_state.phase} {turn_number}: {output.notes}")
         
         return output
 
@@ -213,18 +227,18 @@ Output ONLY the memory text. Do not output JSON.
         for log in game_state.mafia_logs:
             turn_prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
-        if self.state.previous_thoughts:
-            turn_prompt += "\n--- YOUR PRIVATE THOUGHTS (Context) ---\n"
-            for t in self.state.previous_thoughts:
+        if self.state.previous_notes:
+            turn_prompt += "\n--- YOUR STRATEGY NOTES (Context) ---\n"
+            for t in self.state.previous_notes:
                 turn_prompt += f"- {t}\n"
 
         if self.memory:
             turn_prompt += f"\n--- YOUR OLD MEMORY ---\n{self.memory}\n"
 
         turn_prompt += "\n### INSTRUCTIONS ###\n"
-        turn_prompt += "Based on the above, write your NEW memory/strategy file (Max 300 words). This will REPLACE your old memory."
+        turn_prompt += "Based on the above, write your NEW memory/strategy file (Max 200 words). This will REPLACE your old memory."
 
-        # Use the existing client which enforces the TurnOutput schema (thought, speech, vote).
+        # Use the existing client which enforces the TurnOutput schema (notes, speech, vote).
         # We will repurpose these fields for the reflection phase.
         
         log_name = f"{self.player_index}_{self.state.name}"
@@ -238,7 +252,7 @@ Your Status: {'Alive' if self.state.is_alive else 'Dead'}
 GOAL:
 Analyze the game logs and your own performance. 
 You must COMBINE your 'Old Memory' (if any) with the NEW lessons from this game.
-Write a single, updated summary (MAX 300 WORDS) that synthesizes your long-term strategy.
+Write a single, updated summary (MAX 200 WORDS) that synthesizes your long-term strategy.
 This text will be SAVED to your memory file and provided to you in the next game.
 
 KEY INSTRUCTION:
@@ -246,10 +260,10 @@ Focus on GENERIC RULES and HIGH-LEVEL STRATEGIES (e.g., "Always doubt the quiet 
 We want actionable wisdom that applies to ANY game, not just a replay of this one.
 
 IMPORTANT:
-- Put your memory text in the 'thought' field of the JSON output.
+- Put your memory text in the 'notes' field of the JSON output.
 - Set 'speech' to "MEMORY_FILE_UPDATE"
 - Set 'vote' to null
-- KEEP IT CONCISE. Absolute limit is 300 words. If you write more, it will be violently cut off.
+- KEEP IT CONCISE. Absolute limit is 200 words. If you write more, it will be violently cut off.
 """
             
             output = self.client.generate_turn(
@@ -261,7 +275,7 @@ IMPORTANT:
                 turn_number=999
             )
             
-            return output.thought.strip()
+            return output.notes.strip()
             
         except Exception as e:
             print(f"Error generating memory for {self.state.name}: {e}")

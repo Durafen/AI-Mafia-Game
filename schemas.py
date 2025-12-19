@@ -3,8 +3,8 @@ from typing import List, Optional, Literal
 from uuid import uuid4
 
 class TurnOutput(BaseModel):
-    thought: str = Field(..., description="Internal reasoning about the game state")
-    speech: Optional[str] = Field("", description="Public statement to the town (max 4 sentences)")
+    notes: Optional[str] = Field("", description="Brief strategy notes for future turns (max 50 words)")
+    speech: Optional[str] = Field("", description="Public statement to the town (max 75 words)")
     vote: Optional[str] = Field(None, description="Name of player to vote for (or None if not voting phase)")
 
 class LogEntry(BaseModel):
@@ -20,7 +20,7 @@ class PlayerState(BaseModel):
     is_alive: bool = True
     provider: str
     model_name: str # Technical API model name
-    previous_thoughts: List[str] = []
+    previous_notes: List[str] = []
 
 class GameState(BaseModel):
     game_id: str = Field(default_factory=lambda: str(uuid4()))

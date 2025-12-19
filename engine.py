@@ -9,25 +9,23 @@ from schemas import GameState, LogEntry, TurnOutput
 TTS_ENABLED = True   # Set to False to disable text-to-speech
 TTS_RATE = "+20%"    # Speech speed: "+20%" = 20% faster, "-10%" = 10% slower
 AUTO_CONTINUE = True # Set to True to run without user intervention
-MEMORY_ENABLED = True # Set to True to enable distinct memories per player from previous games
+MEMORY_ENABLED = False # Set to True to enable distinct memories per player from previous games
 
 # Config for Roster (with TTS voices)
 ROSTER_CONFIG = [
-    # OPENAI
-    {"name": "Rick", "provider": "openai", "model": "gpt-5.2", "voice": "en-US-GuyNeural"},
-    {"name": "Morty", "provider": "openai", "model": "gpt-5.1", "voice": "en-US-ChristopherNeural"},
-
     # ANTHROPIC
     {"name": "Haiku", "provider": "anthropic", "model": "haiku", "voice": "en-GB-RyanNeural"},
     {"name": "Sonnet", "provider": "anthropic", "model": "sonnet", "voice": "en-AU-WilliamNeural"},
+    {"name": "Opus", "provider": "anthropic", "model": "opus", "voice": "en-US-GuyNeural"},
 
     # GOOGLE
     {"name": "Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-NZ-MitchellNeural"},
     {"name": "Flash", "provider": "google", "model": "gemini-2.5-flash", "voice": "en-IE-ConnorNeural"},
     {"name": "Preview", "provider": "google", "model": "gemini-3-flash-preview", "voice": "en-CA-LiamNeural"},
 
-    # GROQ (Qwen)
+    # QWEN (via qwen CLI)
     {"name": "Qwen", "provider": "groq", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
+    {"name": "Vision", "provider": "groq", "model": "vision-model", "voice": "en-CA-LiamNeural"},
 ]
 
 NARRATOR_VOICE = "en-US-AriaNeural"
@@ -258,8 +256,8 @@ class GameEngine:
         random.shuffle(roster)
 
         # 2. Assign Roles (2 Mafia, 6 Villagers)
-        # Since roster is shuffled, we can just pick indices 0 and 1 for Mafia? 
-        # Or shuffle roles separately? 
+        # Since roster is shuffled, we can just pick indices 0 and 1 for Mafia?
+        # Or shuffle roles separately?
         # Let's shuffle indices to be safe/explicit.
         indices = list(range(8))
         # random.shuffle(indices) -> actually we just need 2 random indices
@@ -380,10 +378,10 @@ class GameEngine:
                         # Wait for previous TTS before displaying new output
                         self.tts.wait_for_speech()
     
-                        # Print Thought to Terminal
                         prefix = "👺 " if player.state.role == "Mafia" else ""
-                        self._print(f"\n💭 {prefix}{player.state.name} Thinking: {output.thought}")
-    
+                        if output.notes:
+                            self._print(f"\n💭 {prefix}{player.state.name} Notes: {output.notes}")
+
                         # Construct content with bracketed action if present
                         speech = output.speech or ""
                         action_part = ""
@@ -434,8 +432,9 @@ class GameEngine:
                         self.log("Defense", "System", "PhaseStart", f"Nominees for elimination: {', '.join(nominee_display)}")
                         self._announce(f"Nominees for elimination are: {', '.join(nominee_display)}")
 
-                        
-                        for nom_name in nominees:
+                        # Sort nominees by day speaking order
+                        ordered_nominees = [p.state.name for p in ordered_living if p.state.name in nominees]
+                        for nom_name in ordered_nominees:
                             # Find player object
                             nom_player = next((p for p in living if p.state.name == nom_name), None)
                             if not nom_player: continue
@@ -446,8 +445,9 @@ class GameEngine:
     
                                 # Wait for previous TTS before displaying
                                 self.tts.wait_for_speech()
-    
-                                self._print(f"\n💭 {nom_player.state.name} Defending: {output.thought}")
+
+                                if output.notes:
+                                    self._print(f"\n💭 {nom_player.state.name} Notes: {output.notes}")
                                 self.log("Defense", nom_player.state.name, "speak", f"[Defense] {output.speech or ''}")
     
                                 # TTS for defense speech in background
@@ -488,10 +488,10 @@ class GameEngine:
                             # Wait for previous TTS before displaying
                             self.tts.wait_for_speech()
     
-                            # Print Thought
                             prefix = "👺 " if player.state.role == "Mafia" else ""
-                            self._print(f"\n💭 {prefix}{player.state.name} Thinking: {output.thought}")
-    
+                            if output.notes:
+                                self._print(f"\n💭 {prefix}{player.state.name} Notes: {output.notes}")
+
                             # Validate vote
                             # MUST be in nominees list (if nominees exist)
                             if vote_target in [None, "null", "Skip", "skip"]:
@@ -554,39 +554,16 @@ class GameEngine:
                             victim = self.active_players.get(v_name)
                             if not victim or not victim.state.is_alive: continue
                             
-                            # --- LAST WORDS PHASE ---
-                            self.state.phase = "LastWords"
-    
-                            try:
-                                # Generate while previous TTS might still be playing
-                                output = victim.take_turn(self.state, self.state.turn)
-    
-                                # Wait for previous TTS before displaying
-                                self.tts.wait_for_speech()
-    
-                                self._print(f"\n💀 {v_name} - LAST WORDS 💀")
-                                self._print(f"\n💭 {victim.state.name} LastWords: {output.thought}")
-                                self.log("LastWords", victim.state.name, "speak", f"[Last Words] {output.speech or ''}")
-    
-                                # TTS for last words in background
-                                if output.speech:
-                                    self.tts.speak(output.speech, victim.state.name, background=True)
-                            except Exception as e:
-                                self.log("LastWords", victim.state.name, "error", f"Failed to speak last words: {e}")
-    
-                            # User can press Enter while TTS plays
-                            self._wait_for_next(listener)
-    
-                            # Wait for last words TTS before death announcement
-                            self.tts.wait_for_speech()
-    
                             # Execute Kill
                             victim.state.is_alive = False
                             self.log("Result", "System", "Death", f"{v_name} was HANGED by the town!")
                             self._announce(f"{v_name} has been hanged by the town")
                             self._print(f"💀💀💀 {v_name} IS DEAD 💀💀💀")
                             self.log("Result", "System", "Info", f"{v_name} is dead.")
-    
+                            role_emoji = "👺" if victim.state.role == "Mafia" else "👤"
+                            self.log("Result", "System", "RoleReveal", f"{role_emoji} {v_name} was a {victim.state.role}!")
+                            self._announce(f"{v_name} was a {victim.state.role}")
+
                 self._wait_for_next(listener)
     
                 # Wait for any remaining TTS before checking win
@@ -617,9 +594,10 @@ class GameEngine:
     
                             # Wait for previous TTS before displaying
                             self.tts.wait_for_speech()
-    
-                            self._print(f"\n💭 👺 {m_player.state.name} (Mafia) Thinking: {output.thought}")
-    
+
+                            if output.notes:
+                                self._print(f"\n💭 👺 {m_player.state.name} Notes: {output.notes}")
+
                             target = output.vote
                             action_tag = f"[Suggests killing {target}] " if target else ""
                             spoken_action = f"{m_player.state.name} suggests killing {target}." if target else ""

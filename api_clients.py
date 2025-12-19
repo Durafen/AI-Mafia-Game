@@ -88,9 +88,9 @@ class UnifiedLLMClient:
                     data = json.loads(data["result"].replace("```json", "").replace("```", "").strip())
                 
                 # Now data should be the TurnOutput dict
-                if "thought" in data: # Basic check
+                if "notes" in data: # Basic check
                     log_response = (
-                        f"THOUGHT: {data.get('thought')}\n"
+                        f"NOTES:   {data.get('notes')}\n"
                         f"SPEECH:  {data.get('speech')}\n"
                         f"VOTE:    {data.get('vote')}"
                     )
