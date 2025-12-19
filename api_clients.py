@@ -88,11 +88,11 @@ class UnifiedLLMClient:
                     data = json.loads(data["result"].replace("```json", "").replace("```", "").strip())
                 
                 # Now data should be the TurnOutput dict
-                if "notes" in data: # Basic check
+                if "strategy" in data: # Basic check
                     log_response = (
-                        f"NOTES:   {data.get('notes')}\n"
-                        f"SPEECH:  {data.get('speech')}\n"
-                        f"VOTE:    {data.get('vote')}"
+                        f"STRATEGY: {data.get('strategy')}\n"
+                        f"SPEECH:   {data.get('speech')}\n"
+                        f"VOTE:     {data.get('vote')}"
                     )
         except:
             pass # Keep raw if any parse error during logging
@@ -103,14 +103,14 @@ class UnifiedLLMClient:
     def _parse_and_validate(self, response_text: str) -> TurnOutput:
         """Attempts to parse JSON from the response and validate against TurnOutput schema."""
         try:
-            # 1. Try generic strip of markdown 
+            # 1. Try generic strip of markdown
             clean_text = response_text.replace("```json", "").replace("```", "").strip()
-            
+
             # 2. Try Regex to find JSON object (handles headers/logs) or list
             import re
             # Match either object {...} OR list [...]
             json_match = re.search(r"(\{|\[).+(\}|\])", response_text, re.DOTALL)
-            
+
             # Let's try to parse whatever text we have as JSON first
             data = None
             try:
@@ -189,7 +189,11 @@ class UnifiedLLMClient:
         elif command == "qwen":
             # qwen --output-format json --model <model> <prompt>
             cmd = ["qwen", "--output-format", "json", "--model", model, prompt]
-            
+
+        elif command == "ollama":
+            # ollama run --format json --hidethinking <model> <prompt>
+            cmd = ["ollama", "run", "--format", "json", "--hidethinking", model, prompt]
+
         else:
             # Fallback
             cmd = [command, "--model", model, prompt]
@@ -224,8 +228,10 @@ class UnifiedLLMClient:
                     cli_command = "claude"
                 elif provider == "google":
                     cli_command = "gemini"
-                elif provider == "groq":
-                    cli_command = "qwen" 
+                elif provider == "qwen":
+                    cli_command = "qwen"
+                elif provider == "ollama":
+                    cli_command = "ollama" 
 
                 if cli_command:
                     response_text = self._call_cli(cli_command, model_name, full_prompt)

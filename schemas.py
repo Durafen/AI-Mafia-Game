@@ -3,7 +3,7 @@ from typing import List, Optional, Literal
 from uuid import uuid4
 
 class TurnOutput(BaseModel):
-    notes: Optional[str] = Field("", description="Brief strategy notes for future turns (max 50 words)")
+    strategy: Optional[str] = Field("", description="Your strategic plan (max 100 words) - overwrites previous")
     speech: Optional[str] = Field("", description="Public statement to the town (max 75 words)")
     vote: Optional[str] = Field(None, description="Name of player to vote for (or None if not voting phase)")
 
@@ -20,7 +20,7 @@ class PlayerState(BaseModel):
     is_alive: bool = True
     provider: str
     model_name: str # Technical API model name
-    previous_notes: List[str] = []
+    strategy: str = ""  # Living strategic plan, overwritten each turn
 
 class GameState(BaseModel):
     game_id: str = Field(default_factory=lambda: str(uuid4()))

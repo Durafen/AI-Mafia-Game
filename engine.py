@@ -16,7 +16,6 @@ ROSTER_CONFIG = [
     # ANTHROPIC
     {"name": "Haiku", "provider": "anthropic", "model": "haiku", "voice": "en-GB-RyanNeural"},
     {"name": "Sonnet", "provider": "anthropic", "model": "sonnet", "voice": "en-AU-WilliamNeural"},
-    {"name": "Opus", "provider": "anthropic", "model": "opus", "voice": "en-US-GuyNeural"},
 
     # GOOGLE
     {"name": "Pro", "provider": "google", "model": "gemini-2.5-pro", "voice": "en-NZ-MitchellNeural"},
@@ -24,8 +23,11 @@ ROSTER_CONFIG = [
     {"name": "Preview", "provider": "google", "model": "gemini-3-flash-preview", "voice": "en-CA-LiamNeural"},
 
     # QWEN (via qwen CLI)
-    {"name": "Qwen", "provider": "groq", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
-    {"name": "Vision", "provider": "groq", "model": "vision-model", "voice": "en-CA-LiamNeural"},
+    {"name": "Qwen", "provider": "qwen", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
+    {"name": "Vision", "provider": "qwen", "model": "vision-model", "voice": "en-CA-LiamNeural"},
+
+    # OLLAMA (local)
+    {"name": "Nemotron", "provider": "ollama", "model": "nemotron-3-nano:30b-cloud", "voice": "en-US-GuyNeural"},
 ]
 
 NARRATOR_VOICE = "en-US-AriaNeural"
@@ -379,8 +381,8 @@ class GameEngine:
                         self.tts.wait_for_speech()
     
                         prefix = "👺 " if player.state.role == "Mafia" else ""
-                        if output.notes:
-                            self._print(f"\n💭 {prefix}{player.state.name} Notes: {output.notes}")
+                        if output.strategy:
+                            self._print(f"\n💭 {prefix}{player.state.name} Strategy: {output.strategy}")
 
                         # Construct content with bracketed action if present
                         speech = output.speech or ""
@@ -446,8 +448,8 @@ class GameEngine:
                                 # Wait for previous TTS before displaying
                                 self.tts.wait_for_speech()
 
-                                if output.notes:
-                                    self._print(f"\n💭 {nom_player.state.name} Notes: {output.notes}")
+                                if output.strategy:
+                                    self._print(f"\n💭 {nom_player.state.name} Strategy: {output.strategy}")
                                 self.log("Defense", nom_player.state.name, "speak", f"[Defense] {output.speech or ''}")
     
                                 # TTS for defense speech in background
@@ -489,8 +491,8 @@ class GameEngine:
                             self.tts.wait_for_speech()
     
                             prefix = "👺 " if player.state.role == "Mafia" else ""
-                            if output.notes:
-                                self._print(f"\n💭 {prefix}{player.state.name} Notes: {output.notes}")
+                            if output.strategy:
+                                self._print(f"\n💭 {prefix}{player.state.name} Strategy: {output.strategy}")
 
                             # Validate vote
                             # MUST be in nominees list (if nominees exist)
@@ -595,8 +597,8 @@ class GameEngine:
                             # Wait for previous TTS before displaying
                             self.tts.wait_for_speech()
 
-                            if output.notes:
-                                self._print(f"\n💭 👺 {m_player.state.name} Notes: {output.notes}")
+                            if output.strategy:
+                                self._print(f"\n💭 👺 {m_player.state.name} Strategy: {output.strategy}")
 
                             target = output.vote
                             action_tag = f"[Suggests killing {target}] " if target else ""

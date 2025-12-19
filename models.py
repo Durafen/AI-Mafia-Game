@@ -77,7 +77,7 @@ IMPORTANT: OUTPUT FORMAT
 You must respond in strict JSON format. Do not add markdown backticks.
 Schema:
 {
-  "notes": "Strategy notes to remember for future turns. Max 75 words! (suspicions, plans, who to watch, strategy)",
+  "strategy": "Your strategic plan for the game (max 100 words). This OVERWRITES your previous strategy. Read your current strategy below and combine/update it with new info, suspicions, plans, strategy",
 """
         # Dynamic Speech Description
         speech_desc = "Your public statement to the town. Max 100 words!"
@@ -129,11 +129,11 @@ Schema:
             for log in game_state.mafia_logs:
                 prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
-        # 4. Memory (Previous Notes)
-        if self.state.previous_notes:
-            prompt += "\n--- YOUR STRATEGY NOTES ---\n"
-            for t in self.state.previous_notes:
-                prompt += f"- {t}\n"
+        # 4. Current Strategy
+        if self.state.strategy:
+            prompt += "\n--- YOUR STRATEGY (from previous turn) ---\n"
+            prompt += f"{self.state.strategy}\n"
+            prompt += "(May be outdated - update in your 'strategy' output)\n"
 
         # 5. Instructions
         prompt += "\n### INSTRUCTIONS ###\n"
@@ -193,9 +193,9 @@ Schema:
             turn_number=turn_number
         )
 
-        # Save notes to memory
-        if output.notes:
-            self.state.previous_notes.append(f"{game_state.phase} {turn_number}: {output.notes}")
+        # Update strategy (overwrites)
+        if output.strategy:
+            self.state.strategy = output.strategy
         
         return output
 
@@ -227,10 +227,9 @@ Output ONLY the memory text. Do not output JSON.
         for log in game_state.mafia_logs:
             turn_prompt += f"[{log.phase}] {log.actor}: {log.content}\n"
 
-        if self.state.previous_notes:
-            turn_prompt += "\n--- YOUR STRATEGY NOTES (Context) ---\n"
-            for t in self.state.previous_notes:
-                turn_prompt += f"- {t}\n"
+        if self.state.strategy:
+            turn_prompt += "\n--- YOUR FINAL STRATEGY (Context) ---\n"
+            turn_prompt += f"{self.state.strategy}\n"
 
         if self.memory:
             turn_prompt += f"\n--- YOUR OLD MEMORY ---\n{self.memory}\n"
@@ -238,8 +237,8 @@ Output ONLY the memory text. Do not output JSON.
         turn_prompt += "\n### INSTRUCTIONS ###\n"
         turn_prompt += "Based on the above, write your NEW memory/strategy file (Max 200 words). This will REPLACE your old memory."
 
-        # Use the existing client which enforces the TurnOutput schema (notes, speech, vote).
-        # We will repurpose these fields for the reflection phase.
+        # Use the existing client which enforces the TurnOutput schema (strategy, speech, vote).
+        # We repurpose these fields for the reflection phase.
         
         log_name = f"{self.player_index}_{self.state.name}"
         try:
@@ -260,7 +259,7 @@ Focus on GENERIC RULES and HIGH-LEVEL STRATEGIES (e.g., "Always doubt the quiet 
 We want actionable wisdom that applies to ANY game, not just a replay of this one.
 
 IMPORTANT:
-- Put your memory text in the 'notes' field of the JSON output.
+- Put your memory text in the 'strategy' field of the JSON output.
 - Set 'speech' to "MEMORY_FILE_UPDATE"
 - Set 'vote' to null
 - KEEP IT CONCISE. Absolute limit is 200 words. If you write more, it will be violently cut off.
@@ -275,7 +274,7 @@ IMPORTANT:
                 turn_number=999
             )
             
-            return output.notes.strip()
+            return output.strategy.strip()
             
         except Exception as e:
             print(f"Error generating memory for {self.state.name}: {e}")

@@ -45,6 +45,9 @@ Check out some of our best simulated games to see high-level AI deception and de
 *   **[Example 5: The "Victory Speech" Bluff](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/example5.txt)**
     *   **Highlights**: Facing a mathematical loss in a 2v1 endgame, Haiku (Mafia) tries a bold anti-strategy: he congratulates the Town on their win and *abstains* from voting, refusing to nominate anyone. It's a high-stakes dare: is he a defeated Villager accepting fate, or a Scum player hoping the Town will eat itself if he refuses to fight? Watch the final two Townies spiral as they try to interpret the silence.
 
+*   **[Example 6: The "Redemption Arc"](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/The_Redemption_Arc.txt)**
+    *   **Highlights**: A Town misled by a martyr's error hangs an innocent... only for the loudest accuser to turn Detective and face the lying manipulator in a 1v1 showdown. A masterclass in deception and recovery.
+
 ---
 
 ## 🚀 Features
