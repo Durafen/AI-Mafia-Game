@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import time
 from typing import Optional, Dict, Any, Type
 from pydantic import BaseModel
 from openai import OpenAI
@@ -235,118 +236,128 @@ class UnifiedLLMClient:
     def generate_turn(self, player_name: str, provider: str, model_name: str, system_prompt: str, turn_prompt: str, turn_number: int, phase: str = "Day", use_cli: bool = True) -> TurnOutput:
 
         full_prompt = f"{system_prompt}\n\n{turn_prompt}"
+        
+        max_retries = 3
+        last_exception = None
 
-        response_text = ""
+        for attempt in range(max_retries):
+            response_text = ""
+            try:
+                if use_cli:
+                    # --- CLI MODE ---
+                    cli_command = None
+                    if provider == "openai":
+                        cli_command = "codex"
+                    elif provider == "anthropic":
+                        cli_command = "claude"
+                    elif provider == "google":
+                        cli_command = "gemini"
+                    elif provider == "qwen":
+                        cli_command = "qwen"
+                    elif provider == "ollama":
+                        cli_command = "ollama" 
 
-        try:
-            if use_cli:
-                # --- CLI MODE ---
-                cli_command = None
-                if provider == "openai":
-                    cli_command = "codex"
-                elif provider == "anthropic":
-                    cli_command = "claude"
-                elif provider == "google":
-                    cli_command = "gemini"
-                elif provider == "qwen":
-                    cli_command = "qwen"
-                elif provider == "ollama":
-                    cli_command = "ollama" 
+                    if cli_command:
+                        response_text = self._call_cli(cli_command, model_name, full_prompt)
+                    else:
+                        raise ValueError(f"No CLI tool mapped for provider {provider}")
 
-                if cli_command:
-                    response_text = self._call_cli(cli_command, model_name, full_prompt)
                 else:
-                    raise ValueError(f"No CLI tool mapped for provider {provider}")
-
-            else:
-                # --- API MODE ---
-                if provider == "openai":
-                    response = self.openai_client.chat.completions.create(
-                        model=model_name,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": turn_prompt}
-                        ],
-                        response_format={"type": "json_object"}
-                    )
-                    response_text = response.choices[0].message.content
-
-                elif provider == "xai": # Grok
-                    model = model_name
-                    try:
-                        response = self.xai_client.chat.completions.create(
-                            model=model,
+                    # --- API MODE ---
+                    if provider == "openai":
+                        response = self.openai_client.chat.completions.create(
+                            model=model_name,
                             messages=[
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": turn_prompt}
                             ],
                             response_format={"type": "json_object"}
                         )
-                    except:
-                         response = self.xai_client.chat.completions.create(
-                            model=model,
+                        response_text = response.choices[0].message.content
+
+                    elif provider == "xai": # Grok
+                        model = model_name
+                        try:
+                            response = self.xai_client.chat.completions.create(
+                                model=model,
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": turn_prompt}
+                                ],
+                                response_format={"type": "json_object"}
+                            )
+                        except:
+                             response = self.xai_client.chat.completions.create(
+                                model=model,
+                                messages=[
+                                    {"role": "system", "content": system_prompt},
+                                    {"role": "user", "content": turn_prompt + "\n\nProvide your response in JSON format."}
+                                ]
+                            )
+                        response_text = response.choices[0].message.content
+
+                    elif provider == "groq":
+                        response = self.groq_client.chat.completions.create(
+                            model=model_name,
                             messages=[
                                 {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": turn_prompt + "\n\nProvide your response in JSON format."}
+                                {"role": "user", "content": turn_prompt},
+                            ],
+                            response_format={"type": "json_object"}
+                        )
+                        response_text = response.choices[0].message.content
+
+                    elif provider == "openrouter":
+                        response = self.openrouter_client.chat.completions.create(
+                            model=model_name,
+                            messages=[
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": turn_prompt},
+                            ],
+                        )
+                        response_text = response.choices[0].message.content
+
+                    elif provider == "anthropic":
+                        response = self.anthropic_client.messages.create(
+                            model=model_name,
+                            max_tokens=1024,
+                            system=system_prompt,
+                            messages=[
+                                {"role": "user", "content": turn_prompt}
                             ]
                         )
-                    response_text = response.choices[0].message.content
+                        response_text = response.content[0].text
 
-                elif provider == "groq":
-                    response = self.groq_client.chat.completions.create(
-                        model=model_name,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": turn_prompt},
-                        ],
-                        response_format={"type": "json_object"}
-                    )
-                    response_text = response.choices[0].message.content
-
-                elif provider == "openrouter":
-                    response = self.openrouter_client.chat.completions.create(
-                        model=model_name,
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": turn_prompt},
-                        ],
-                    )
-                    response_text = response.choices[0].message.content
-
-                elif provider == "anthropic":
-                    response = self.anthropic_client.messages.create(
-                        model=model_name,
-                        max_tokens=1024,
-                        system=system_prompt,
-                        messages=[
-                            {"role": "user", "content": turn_prompt}
-                        ]
-                    )
-                    response_text = response.content[0].text
-
-                elif provider == "google":
-                    from google import genai
-                    from google.genai import types
-                    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-                    response = client.models.generate_content(
-                        model=model_name,
-                        contents=turn_prompt,
-                        config=types.GenerateContentConfig(
-                            system_instruction=system_prompt,
-                            response_mime_type="application/json"
+                    elif provider == "google":
+                        from google import genai
+                        from google.genai import types
+                        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=turn_prompt,
+                            config=types.GenerateContentConfig(
+                                system_instruction=system_prompt,
+                                response_mime_type="application/json"
+                            )
                         )
-                    )
-                    response_text = response.text
-                else:
-                    raise ValueError(f"Unknown provider: {provider}")
+                        response_text = response.text
+                    else:
+                        raise ValueError(f"Unknown provider: {provider}")
 
-            # Debug Log
-            self._log_debug(player_name, turn_number, phase, full_prompt, response_text)
+                # Debug Log
+                self._log_debug(player_name, turn_number, phase, full_prompt, response_text)
 
-            # Parse
-            return self._parse_and_validate(response_text)
+                # Parse
+                return self._parse_and_validate(response_text)
 
-        except Exception as e:
-            # Log the failure too
-            self._log_debug(player_name, turn_number, phase, full_prompt, f"ERROR: {str(e)}")
-            raise e
+            except Exception as e:
+                last_exception = e
+                # Log the failure too
+                self._log_debug(player_name, turn_number, phase, full_prompt, f"ERROR (Attempt {attempt + 1}): {str(e)}")
+                
+                print(f"⚠️  [Attempt {attempt + 1}/{max_retries}] Error generating/parsing turn for {player_name}: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(5)
+        
+        # If we get here, all retries failed
+        raise last_exception

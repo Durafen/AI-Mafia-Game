@@ -125,14 +125,15 @@ OUTPUT: JSON only, no backticks.
                  prompt += f"TRIAL: {game_state.on_trial} is on trial. Silent vote. Votes are public.\n"
                  prompt += "vote=guilty/innocent/abstain. Guilty > Innocent = hanged.\n"
 
-                 # MAFIA ONLY advice for partner trials
-                 if self.state.role == "Mafia" and self.partner_name and game_state.on_trial == self.partner_name:
-                      prompt += "Consider the implications of your vote.\n"
+                 prompt += "Consider the implications of your vote.\n"
         elif game_state.phase == "Night":
              prompt += "NIGHT: Whisper to partner. vote=player_name.\n"
         else:
              # Day Phase
-             prompt += f"DAY {game_state.turn}. {self.state.name}, analyze the situation, play your role, speak out, make it count.\n"
+             prompt += f"DAY {game_state.turn}. {self.state.name}, analyze the situation, bring something new to the table, speak out, make it count."
+             if game_state.turn == 1:
+                 prompt += "\nNo voting on Day 1 (vote=null)."
+             prompt += "\n"
 
         return prompt
 
