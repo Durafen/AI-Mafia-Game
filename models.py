@@ -29,7 +29,11 @@ class Player:
         self.partner_name = partner_name
 
     def _build_system_prompt(self, game_state: GameState) -> str:
-        prompt = f"""MAFIA GAME. You: {self.state.name} ({self.state.role}). 8 players: 2 Mafia, 6 Villagers.
+        player_count = len(game_state.players)
+        villager_count = player_count - 2
+        prompt = f"""MAFIA GAME. You: {self.state.name} ({self.state.role}).
+{player_count} players: 2 Mafia, {villager_count} Villagers.
+{'Role revealed on death.' if game_state.reveal_role_on_death else ''}
 """
         # Check if partner is alive
         partner_alive = False
@@ -63,7 +67,9 @@ OUTPUT: JSON only, no backticks.
 """
         # Dynamic Speech Description
         speech_desc = "<100w public statement>"
-        if game_state.phase == "Night" and self.state.role == "Mafia":
+        if game_state.phase == "Trial" and game_state.on_trial != self.state.name:
+            speech_desc = "null"
+        elif game_state.phase == "Night" and self.state.role == "Mafia":
             if partner_alive:
                 speech_desc = "<100w whisper to partner>"
             else:
@@ -73,15 +79,15 @@ OUTPUT: JSON only, no backticks.
 
         # Dynamic Vote Description
         vote_desc = "null"
-        if game_state.phase == "Day":
-            if game_state.turn == 1:
+        if game_state.phase == "Day" and game_state.turn > 1:
+            vote_desc = "nominee (for trial) or null"
+        elif game_state.phase == "Trial":
+            if game_state.on_trial == self.state.name:
                 vote_desc = "null"
             else:
-                vote_desc = "nominee or null"
-        elif game_state.phase == "Voting":
-            vote_desc = "candidate or null"
+                vote_desc = "guilty/innocent/abstain"
         elif game_state.phase == "Night" and self.state.role == "Mafia":
-            vote_desc = "kill target"
+            vote_desc = "player_name to kill"
 
         prompt += f'"vote": "{vote_desc}"' + "}\n"
         
@@ -112,20 +118,21 @@ OUTPUT: JSON only, no backticks.
 
         # 5. Instructions
         prompt += "\n---\n"
-        if game_state.phase == "Voting":
-             prompt += f"VOTE. Candidates: {', '.join(game_state.nominees)}. {len(living)} voters.\n"
-             prompt += "Silent vote: speech=\"\", vote=candidate or null. Tie = all tied eliminated.\n"
-        elif game_state.phase == "Defense":
-             prompt += "DEFENSE: You're nominated. Convince town to hang someone else from nominees. vote=null.\n"
+        if game_state.phase == "Trial":
+             if game_state.on_trial == self.state.name:
+                 prompt += "TRIAL: You're on trial. Defend yourself. vote=null.\n"
+             else:
+                 prompt += f"TRIAL: {game_state.on_trial} is on trial. Silent vote. Votes are public.\n"
+                 prompt += "vote=guilty/innocent/abstain. Guilty > Innocent = hanged.\n"
+
+                 # MAFIA ONLY advice for partner trials
+                 if self.state.role == "Mafia" and self.partner_name and game_state.on_trial == self.partner_name:
+                      prompt += "Consider the implications of your vote.\n"
         elif game_state.phase == "Night":
-             prompt += "NIGHT: Whisper to partner. vote=target to kill.\n"
+             prompt += "NIGHT: Whisper to partner. vote=player_name.\n"
         else:
              # Day Phase
-             prompt += f"DAY {game_state.turn}. Speak once, make it count.\n"
-             if game_state.turn == 1:
-                 prompt += "No voting today. vote=null.\n"
-             else:
-                 prompt += "Nominate via vote (or null). Only nominees can be hanged.\n"
+             prompt += f"DAY {game_state.turn}. {self.state.name}, analyze the situation, play your role, speak out, make it count.\n"
 
         return prompt
 

@@ -30,6 +30,12 @@ Watch the most advanced AI models from competing companies deceive and outsmart 
 
 Check out some of our best simulated games to see high-level AI deception and deduction in action:
 
+*   **[Example: The "Manipulation Masterclass"](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/The_Manipulation_Masterclass.txt)**
+    *   **Highlights**: A flawless victory achieved by weaponizing the "Voice of Reason." The Mafia defends a framed target so effectively that the Town begins executing its own detectives for being "too aggressive." A masterclass in sociological manipulation where the villains are treated as the town's moral compass.
+
+*   **[Example: The "Cursed Protagonist"](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/The_Cursed_Protagonist.txt)**
+    *   **Highlights**: A tragedy of errors where the Town executes a Villager for being "too perfect." The Mafia weaponize "Graveyard Analysis" by systematically killing anyone who interacts with their target, framing him as a silencer. Watch how the Mafia survives a Day 2 trial by convincing the Town that catching scum is "counterproductive."
+
 *   **[Example 1: The "Trust the Pattern" Trap](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/example1.txt)**
     *   **Highlights**: Day 1 starts with a brilliant "accountability framework" proposed by Rick (Town) to trap the Mafia. It works perfectly... until the Mafia flips the script. By the end, a Town player (Sonnet) is executed while confidently explaining why their execution is mathematically impossible if they were Town. Watch how "perfect logic" can be weaponized to lead the Town off a cliff.
 

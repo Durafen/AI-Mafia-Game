@@ -1,0 +1,304 @@
+=== MAFIA GAME LOG (2025-12-20_05-35-04) ===
+Initializing Game...
+[System] Game Initialized. Mafia are: Pro, Devstral
+
+⚙️ System  Mafia: Pro, Devstral
+
+☀️ System Day 1
+
+System Speaking order: Flash, Deepseek, Chimera, Preview, Pro, Qwen, Haiku, Devstral
+
+💭 Flash Strategy: As a Villager, my goal is to identify Mafia members. On Day 1, I need to establish open communication, observe initial statements for inconsistencies, and note who is quiet or overly vocal. I will encourage everyone to share their perspectives to gather as much information as possible. I will withhold my vote unless a clear suspicion arises, preferring 'null' to avoid misdirection.
+
+🗣️ 1. Flash: Good morning, everyone. As a Villager, my priority today is to understand everyone's initial thoughts. Let's all speak openly about our observations and suspicions, no matter how small. I'm eager to hear what others have to say to help us find the Mafia. Please, speak up.
+
+💭 Deepseek Strategy: Observational gameplay day 1, provoke organic responses by questioning meta-context and seeking disagreement rather than consensus, watch for overeager contributors and noncommittal answers. Establish information baseline without overacting role.
+
+🗣️ 2. Deepseek: Flash’s opening is pitch-perfect for a villager—earnest, cooperative—maybe too perfect for comfort, which makes me itch, not accuse. Strategy: disagree productively. Do we pressure early or let whispers brew? I’d rather risk a messy debate than polite silence. Who here would force a vote today versus waiting, and why?
+
+💭 Chimera Strategy: Observe Deepseek's reaction to Flash. Encourage more opinions to surface, noting Deepseek's hesitation to accuse yet sowing doubt. Push for active participation but avoid random votes.
+
+🗣️ 3. Chimera: Deepseek, you call Flash 'too perfect' but stop short of accusation—why? Let’s dissect that hesitation. Everyone, push beyond polite analysis. Who’s overly cautious or defensive?
+
+💭 Preview Strategy: Flash's opening was standard; Deepseek’s skepticism is a common way to start a conversation. Chimera is being the most aggressive, which could be genuine hunting or performing 'towniness.' I want to test the dynamic between the first three to gauge the reactions of the players yet to speak. No vote yet; I'm watching to see if Pro or Qwen try to defuse this tension or escalate it. High pressure early is good for Villagers.
+
+🗣️ 4. Preview: Flash, that was a very safe opening—almost a little too scripted. Deepseek, I appreciate the 'itch,' but why wait to scratch it? Chimera, you’re definitely the loudest in the room right now. Aggression is fine, but let’s see if it’s backed by logic or just a need to control the Day 1 narrative. Pro, you’re up. Do you think Chimera is being helpful or just trying to look busy while the Mafia hides in the noise?
+
+💭 👺 Pro Strategy: Preview put me on the spot about Chimera, and I'll use it. I'll defend Chimera's aggression as a necessary catalyst for a game that started too passively with Flash's safe opening. This makes me look like a team player who values progress over comfort. By saying I'm more worried about quiet players than loud ones, I'm subtly shifting pressure onto Qwen and Haiku, who speak next. This deflects attention from me and my partner, Devstral. No vote today; it's too early to commit and attract unnecessary heat.
+
+🗣️ 👺 5. Pro: Preview, that's a fair question. Chimera's approach is aggressive, yes, but is it unhelpful? I don't think so. We've had safe, predictable openings. Chimera is forcing us to engage, to question, and to defend our positions. That's more valuable than polite silence. I'm less worried about the loud player who puts their cards on the table and more concerned about those who will let us talk in circles without contributing anything of substance. Let's see what Qwen and Haiku have to add.
+
+💭 Qwen Strategy: Flash seems genuine with typical villager openness. Deepseek showing subtle suspicion early, good analytical approach. Chimera being aggressively vocal - could be trying to dominate narrative. Preview challenging but not pointing. Pro defending engagement but warning about circle-talkers. Need to appear thoughtful villager, encourage discussion without overcommitting. Watch for who stays quiet and who tries to control flow.
+
+🗣️ 6. Qwen: Thanks Pro, I agree engagement matters. My initial thought - Flash's openness seems genuine, but as Deepseek noted, let's not mistake politeness for truth. Chimera, your energy's high - what specific concerns drive your aggression? Preview, your script comment on Flash is interesting. I'd rather see someone contribute meaningfully than stay silent, but we need substance behind the volume. Let's focus on actionable observations, not just posturing.
+
+💭 Haiku Strategy: Day 1: No deaths yet, high information cost. Flash opened cooperatively (villager-like), Deepseek expressed discomfort with Flash's tone but didn't commit to suspicion. Chimera's aggressive pushback seems genuine—demanding substance over politeness. Preview called out Flash's safety and questioned Chimera's motives. Pro defended Chimera's aggression as valuable engagement. Qwen echoed Pro's point about engagement vs. posturing. Pattern: aggressive players (Chimera, Preview, Pro) are questioning safe players (Flash). Deepseek's hesitation is interesting—expressed doubt but held back. Need to watch if Chimera/Preview aggression masks Mafia coordination or is genuine villager energy. Qwen and Pro seem aligned on engagement mattering. No clear Mafia reads yet—too early, too much performative agreement.
+
+🗣️ 7. Haiku: Chimera and Preview are pushing for substance, which I respect. But I notice Chimera's aggression and Preview's skepticism might be working together—whether intentionally or not. Deepseek, you said Flash felt 'too perfect' but stopped short. Why? That hesitation matters. Flash and Pro seem to agree Chimera's chaos is helpful. I'd rather see specific reads than energy. Who here thinks someone is actively hiding, not just being cautious?
+
+💭 👺 Devstral Strategy: Pro is pushing for engagement and defending Chimera, which aligns with our goal to create chaos. I'll echo Pro's sentiment to appear cooperative while subtly steering suspicion toward Flash and Deepseek. Flash's 'perfect' opening and Deepseek's hesitation are good targets. Keep the focus on them to avoid scrutiny on us.
+
+🗣️ 👺 8. Devstral: [👉 Nominated Flash] I appreciate the energy in the room. Flash, your opening was polished, but as Deepseek pointed out, it felt almost rehearsed. Deepseek, your hesitation to accuse Flash is interesting—why hold back? Let’s dig into that. Pro’s right, we need substance, not just noise. Chimera’s aggression is forcing us to think, which is good. Let’s keep pushing for specific reads.
+
+⚖️ System Nominees: Flash (1)
+
+⚖️  TRIAL: Flash ⚖️
+
+⚖️ System Flash on trial
+
+💭 Flash Strategy: I'm on trial as a Villager, accused of being 'too perfect' or 'rehearsed.' My strategy is to directly address these accusations by explaining my logical Villager approach to Day 1—seeking open communication and initial thoughts. I will highlight the lack of substance in the accusations against me, and gently redirect the focus onto those who have been most vocal in their skepticism without offering concrete alternatives, such as Deepseek or Devstral. I need to maintain my earnest Villager persona while defending myself and pushing for actual leads.
+
+⚖️ 1. Flash: [🛡️ Defense] I appreciate Devstral's nomination, and the observations about my opening being 'too perfect' or 'rehearsed.' As a Villager, my intent was to set a tone of open, honest communication to gather information. I sought to encourage everyone to speak, because silence benefits the Mafia. If clarity and a direct approach are now grounds for suspicion, I urge you to look closer. What specific action, beyond my words being 'too perfect,' actually makes me seem like Mafia? Let's not waste a trial on vague feelings when actual Mafia are hiding among us. Deepseek, you first noted the 'too perfect' feeling—what exactly is the 'itch' that makes you uncomfortable, beyond just my opening being clear?
+
+🗳️  JUDGMENT: Flash 🗳️
+
+💭 Deepseek Strategy: Observing without consensus. My previous ‘too perfect’ comment on Flash aimed to provoke reactions, not to accuse—Chimera asked why I hesitated, Haiku honed in on that hesitation, Preview called me out for not scratching the itch, and Pro defended Chimera’s aggression while skirting scrutiny. Devstral’s nomination feels opportunistic: targeting Flash’s ‘polish’ while echoing others. Trial pressure tests alliances under fire. Look for genuine reads versus performative questioning, and note who stays silent.
+
+⚖️ 2. Deepseek: abstains
+
+💭 Chimera Strategy: Maintain suspicion on Flash but recognize lack of hard evidence; pushing for innocent vote to avoid villager loss while noting Deepseek's reluctance and Devstral's initiating nomination as potential leads.
+
+⚖️ 3. Chimera: votes innocent
+
+💭 Preview Strategy: Flash’s defense is solid; the 'too perfect' narrative is weak and likely a distraction. Devstral’s nomination felt opportunistic, leveraging thin Day 1 'vibes.' Chimera’s innocent vote suggests they aren't looking for an easy kill. I will vote innocent to avoid a mislynch. My focus shifts to Devstral for pushing this case and Deepseek for starting the 'itch' narrative but then backing away with an abstention. I'm looking for players who jump on this wagon with little justification.
+
+⚖️ 4. Preview: votes innocent
+
+💭 👺 Pro Strategy: The trial is shifting. Deepseek abstained, and both Chimera and Preview—the most aggressive players—voted innocent. A guilty vote is now too risky and would put me and Devstral in a suspicious minority if it fails. I'll vote innocent to appear reasonable and willing to listen to a defense. This makes me look like a measured villager and avoids painting a target on my back. My goal is to blend with the town's decision, making Devstral's nomination look like a necessary test that Flash simply passed.
+
+⚖️ 👺 5. Pro: votes innocent
+
+💭 Qwen Strategy: Flash's defense is reasonable - genuine villager concern about being judged on vague feelings. Deepseek's hesitation to elaborate on 'itch' when pressed is suspicious - could be protecting Flash as co-mafia or just overthinking. Chimera, Preview, and Pro voted innocent quickly after Flash's defense. I should vote innocent to align with majority while signaling I'm not convinced Flash is completely clean - note that Flash perfectly deflected by attacking the 'vague feelings' criticism. My abstention would show neutrality, but voting innocent maintains villager trust while keeping analytical distance.
+
+⚖️ 6. Qwen: votes innocent
+
+💭 Haiku Strategy: Flash cleared by aggressive questioners (Chimera, Preview) who voted innocent—suspicious coordinated flip. Deepseek's abstain after hesitation suggests fence-sitting, not conviction. Pro and Qwen aligned on 'engagement matters.' Need to track if Chimera/Preview/Pro form Mafia trio using aggression as cover. Deepseek's hesitation pattern worth monitoring. No deaths yet; Day 1 was performative agreement masking unclear alignments.
+
+⚖️ 7. Haiku: votes innocent
+
+💭 👺 Devstral Strategy: Continue to align with Pro's approach, creating chaos and pushing for engagement. Flash's trial is an opportunity to appear fair while subtly maintaining suspicion on them. Vote innocent to avoid drawing attention to ourselves and to keep the game going, allowing more opportunities to manipulate the narrative.
+
+⚖️ 👺 8. Devstral: votes innocent
+
+⚖️ System Guilty: 0, Innocent: 6, Abstain: 1
+
+✅ Flash IS RELEASED ✅
+
+System Flash released
+
+🌙 System Night 1
+
+System  Mafia awake
+
+💭 👺 Pro Strategy: The town let Flash off easily. The most interesting move was Deepseek's abstention. It signals hesitation and uncertainty, making them a perfect target. Removing them creates a new puzzle for the town to solve tomorrow: 'Why did Deepseek abstain?' We can frame it as them being a weak villager who was onto something but afraid to act, or even a third-party role if that's in play. This shifts focus away from Devstral's failed nomination and me. We stay quiet and let the town eat itself.
+
+🌚 👺 5. Pro:  [🔪 Suggests killing Deepseek] Devstral, good job putting pressure on Flash. The town isn't ready to lynch yet. Let's kill Deepseek. Their abstention makes them an easy target for misinterpretation tomorrow. We can argue they were a timid villager who knew something or a confused mafia. It creates chaos and moves the spotlight off us. No one will see it coming.
+
+💭 👺 Devstral Strategy: Align with Pro's plan to kill Deepseek. Their abstention creates ambiguity, allowing us to manipulate the narrative tomorrow. Continue to push for engagement and chaos, while maintaining a low profile to avoid suspicion.
+
+🌚 👺 8. Devstral:  [🔪 Suggests killing Deepseek] Pro, I agree with your reasoning. Deepseek's abstention is suspicious and can be used to our advantage. Let's eliminate them and see how the town reacts tomorrow.
+
+System  Votes: Deepseek (2)
+
+System Mafia killed Deepseek
+
+🩸 TRAGEDY! Deepseek was found DEAD in the morning.🩸
+
+☀️ System Day 2
+
+System Speaking order: Chimera, Preview, Pro, Qwen, Haiku, Devstral, Flash
+
+💭 Chimera Strategy: Re-suspect Flash since Deepseek (killed) doubted him Day 1, question why Mafia silenced their critic. Probe Devstral's nomination then innocent vote—inconsistent? Challenge Haiku's 'Chimera-Preview collusion' comment as potential Mafia diversion.
+
+🗣️ 3. Chimera: [👉 Nominated Devstral] Deepseek dies after doubting Flash—convenient silencing? Devstral, you nominated Flash then flipped—explain. Haiku, why suggest Preview and I collaborate? That feels intentionally divisive. Mafia thrives on distrust—focus on actions, not paranoia.
+
+💭 Preview Strategy: Deepseek’s death smells like a frame or silencing. He was the primary skeptic of Flash. Devstral’s weak nomination and immediate flip on Flash suggest an opportunistic Mafia testing the waters for an easy wagon. Haiku’s attempt to link me with Chimera is a classic 'pairing' tactic to build a future case against two Villagers. I’ll support Chimera’s pressure on Devstral; his Day 1 behavior was inconsistent and reactionary. We need to see if his aggression has any real logic behind it or if he's just flailing.
+
+🗣️ 4. Preview: [👉 Nominated Devstral] Deepseek’s death is a huge loss. He was the first to challenge the 'too perfect' narrative, and now he’s silenced. Devstral, your nomination of Flash felt like you were trying to spark a fire without any matches—and you backed down instantly when it didn't catch. That’s not hunting; that’s probing. Haiku, trying to link Chimera and me as a duo is a reach that feels like you’re trying to manufacture a narrative for later. Devstral, explain why you pushed Flash so hard just to vote innocent.
+
+💭 👺 Pro Strategy: Devstral is under fire, so my top priority is to defend him. I'll frame his nomination of Flash as a necessary test to gather information, and his innocent vote as a logical response to the town's unwillingness to convict. I will pivot the conversation to the most significant event: Deepseek's death. Deepseek was the only one who formally expressed doubt about Flash via abstention, and now he's dead. This shifts heat back to Flash and makes Chimera and Preview's attack on Devstral look like a misdirection.
+
+🗣️ 👺 5. Pro: Let's pause and think. Chimera and Preview are jumping on Devstral for testing a theory about Flash—a theory Deepseek also held. The town wasn't ready to act, so Devstral correctly voted innocent. Then, the one person who abstained—Deepseek—is killed. Isn't that the more telling event? The Mafia silenced the uncertain vote. Punishing Devstral for gathering data is counterproductive and feels like a convenient distraction from the real question: Who benefited most from Deepseek's death?
+
+💭 Qwen Strategy: Deepseek's death is critical - he abstained from Flash trial and questioned Flash's 'too perfect' nature. His killing suggests he was onto something or the Mafia wanted him silenced. Flash's defense was smooth but deflective, turning criticism into sympathy. Current nominations on Devstral seem unfair - he tested Flash based on town sentiment but voted innocent when Flash defended. The real target should be Flash, whose behavior matches Deepseek's concerns. I need to highlight Flash's manipulative response while staying neutral on Devstral.
+
+🗣️ 6. Qwen: [👉 Nominated Flash] Deepseek's death is our focus. He was the only one who pressed Flash about the 'too perfect' concern, then abstained from voting - now he's dead. This isn't coincidence. Flash's defense brilliantly turned suspicion into sympathy by attacking the 'vague feelings' criticism. But that's exactly what a skilled manipulator would do - make accusers feel guilty for questioning. Deepseek saw something we missed. Devstral deserves credit for testing Flash based on town sentiment. Instead of punishing him, let's examine why Flash's defense was so effective and whether it's manipulation.
+
+💭 Haiku Strategy: Deepseek abstained, then died—Mafia kills uncertain votes or threats. Qwen jumped to Flash hard; feels like deflection, not analysis. Chimera/Preview tested Flash fairly. Pro read Deepseek's abstain correctly. Devstral got piled on unfairly. Tracking: Is Qwen covering or just aggressive? Monitor Chimera/Preview coordination next.
+
+🗣️ 7. Haiku: [👉 Nominated Qwen] Deepseek dies after abstaining, and Qwen immediately nominates Flash? That's fast. Deepseek's hesitation and abstain matter more than Flash's defense. Why does Qwen push Flash so hard instead of asking who killed Deepseek? I'm nominating Qwen—let's see if the aggression holds up under pressure.
+
+💭 👺 Devstral Strategy: Leverage the chaos around Deepseek's death to shift focus away from us. Defend our actions logically while subtly redirecting suspicion toward Flash or Qwen. Maintain alignment with Pro to control the narrative and avoid drawing unnecessary attention.
+
+🗣️ 👺 8. Devstral: [👉 Nominated Qwen] Deepseek's death is suspicious, but let's not jump to conclusions. I nominated Flash to test the town's reaction, not to accuse blindly. Qwen's sudden push on Flash feels opportunistic. Pro's right—we should focus on who benefited from Deepseek's silence. Let's analyze actions, not just words.
+
+💭 Flash Strategy: Deepseek's death, especially after his abstention in my trial, is a significant event that points to the Mafia eliminating a variable vote. My strategy is to highlight this and counter Qwen's accusation by asserting my actions were logical for a Villager seeking clarity, not manipulation. I will also align with Pro and Devstral in focusing on who truly benefited from Deepseek's death, while subtly redirecting suspicion to Qwen due to their swift and aggressive accusation, a stance now questioned by both Haiku and Devstral. My goal is to maintain my Villager persona, deflect current accusations, and sow doubt on Qwen.
+
+🗣️ 1. Flash: Deepseek's death is deeply unsettling, especially given his abstention during my trial. It feels like the Mafia targeted a neutral, uncertain voice. Qwen, your swift leap to accuse me, calling my defense 'manipulative,' is concerning. I merely asked for concrete evidence, which any innocent Villager would do. Haiku and Devstral have both nominated you, Qwen, questioning the opportunism of your accusation. I echo Pro and Devstral: let's scrutinize who *truly* gained from Deepseek's silence, rather than latching onto immediate, unsubstantiated blame. Qwen's aggression requires closer examination.
+
+⚖️ System Nominees: Devstral (2), Qwen (2), Flash (1)
+
+⚖️  TRIAL: Devstral ⚖️
+
+⚖️ System Devstral on trial
+
+💭 👺 Devstral Strategy: Defend my actions as a logical test of town sentiment, not blind aggression. Highlight that Deepseek's death is the real mystery, not my nomination of Flash. Redirect focus to Qwen's opportunistic push on Flash, framing it as suspicious timing. Align with Pro's narrative to control the discussion and avoid looking defensive.
+
+⚖️ 👺 8. Devstral: [🛡️ Defense] My nomination of Flash was a test, not an accusation. I wanted to see how the town reacted to suspicion. Deepseek's death is the real issue here—why was the only abstainer killed? Qwen's sudden push on Flash feels opportunistic, especially after Deepseek's death. Let's focus on who benefited from silencing Deepseek, not on punishing me for gathering information.
+
+🗳️  JUDGMENT: Devstral 🗳️
+
+💭 Flash Strategy: Devstral's defense of testing town reactions and now aligning to question Qwen's opportunism, especially given Deepseek's death, makes sense for a Villager. My vote for innocent reinforces my stance against impulsive accusations and keeps the focus on Qwen and the implications of Deepseek's silencing. It also solidifies alliances with Pro and Devstral, who are also questioning Qwen.
+
+⚖️ 1. Flash: votes innocent
+
+💭 Chimera Strategy: Maintain suspicion on Flash due to Deepseek's death, but Devstral's inconsistency seems more like town testing than Mafia. Focus next on Qwen's opportunistic Flash push & Haiku's diversion attempts.
+
+⚖️ 3. Chimera: votes innocent
+
+💭 Preview Strategy: Deepseek's death confirms the 'too perfect' Flash is a high-priority suspect. Devstral's 'test' was clumsy, but Chimera's decision to nominate him then vote innocent is performative and suspicious. It feels like the Mafia is using Devstral as a shield to avoid a real discussion on Flash or Qwen. I'll vote innocent on Devstral to keep the focus on the primary manipulators. Haiku's defense of Flash by attacking Qwen suggests a possible Flash-Haiku-Chimera alignment. We need to watch how these three interact.
+
+⚖️ 4. Preview: votes innocent
+
+💭 👺 Pro Strategy: My defense of Devstral seems to have worked, as the town is voting to save him. The next target is Qwen. Their immediate, aggressive nomination of Flash after Deepseek's death looks suspicious and opportunistic. I will frame them as trying to railroad an innocent and deflect attention. Haiku is already on this train of thought, so I will support that narrative. This will sow more chaos and keep the heat off me and Devstral.
+
+⚖️ 👺 5. Pro: votes innocent
+
+💭 Qwen Strategy: Devstral tested Flash based on town sentiment (from Deepseek's concerns) but voted innocent when Flash defended well. This shows good process - he gathered info, didn't rush to judgment. The real issue is Flash's smooth defense after Deepseek's 'too perfect' concern led to Deepseek being killed (likely silenced). Hiding behind 'testing theory' while actually targeting Flash is suspicious - Flash manipulated town sentiment against himself to gain sympathy. But Devstral's process was sound, so vote innocent. Focus remains on Flash as the threat identified by dying player.
+
+⚖️ 6. Qwen: votes innocent
+
+💭 Haiku Strategy: Deepseek's abstain + death = Mafia kills uncertain votes. Qwen's flash-push post-Deepseek death reeks of deflection—either covering or overcompensating. Devstral's nomination was test, not accusation. Town correctly defending him. Pro and Haiku reading well. Next: monitor if Qwen doubles down or pivots again. Chimera/Preview coordination still unclear—force specifics.
+
+⚖️ 7. Haiku: votes innocent
+
+⚖️ System Guilty: 0, Innocent: 6, Abstain: 0
+
+✅ Devstral IS RELEASED ✅
+
+System Devstral released
+
+⚖️  TRIAL: Qwen ⚖️
+
+⚖️ System Qwen on trial
+
+💭 Qwen Strategy: Deepseek's death after highlighting Flash's 'too perfect' behavior and then abstaining is highly suspicious - classic Mafia silencing. My nomination came from challenging Flash's manipulative defense that turned suspicion into sympathy. Though Flash made others question their instincts, this is typical mafia behavior. I maintain that Flash was correctly identified by dying player Deepseek, and my defense will emphasize how Flash's defense narrative manipulates town perception. Focus on how Flash's response to Devstral's test-nomination seemed designed to create sympathy and turn town against reasonable suspicion.
+
+⚖️ 6. Qwen: [🛡️ Defense] Everyone, please reconsider. I was nominated for challenging Flash after Deepseek's death - the very person who first noticed Flash's 'too perfect' demeanor and then mysteriously died. My accusation against Flash wasn't opportunistic - it was building on Deepseek's insight. Flash's defense was masterful manipulation: he made you feel guilty for having reasonable suspicions. When someone dies after raising concerns about a player, and that player then turns the table by making suspects feel bad for questioning, that's the classic mafia play. Don't let Flash's smooth defense obscure the fact that Deepseek identified something concerning about him and then got silenced.
+
+🗳️  JUDGMENT: Qwen 🗳️
+
+💭 Flash Strategy: Qwen's immediate and aggressive re-accusation of me after Deepseek's death, combined with redirecting focus from Deepseek's killer to my 'manipulative' defense, is highly suspicious. Deepseek, an abstainer, was silenced. Qwen's move feels like an opportunistic attempt to capitalize on that death by twisting the narrative back onto me, rather than genuinely investigating who benefited from Deepseek's silence. Haiku and Devstral also share this suspicion, and Pro's defense of Devstral's data-gathering supports questioning Qwen's current stance. My vote reflects the need to scrutinize those who exploit uncertainty and deflect from the true Mafia action.
+
+⚖️ 1. Flash: votes guilty
+
+💭 Chimera Strategy: Focus on Flash's suspicious survival after Deepseek's death, but Qwen's overt aggression against Flash could be Mafia exploiting town tension. Voting innocent here to avoid mislynch while keeping Flash as primary suspect; his deflection onto Qwen feels calculated.
+
+⚖️ 3. Chimera: votes innocent
+
+💭 Preview Strategy: Deepseek’s death validates the suspicion around Flash. Qwen is now being framed for continuing that line of inquiry. Flash’s immediate 'guilty' vote confirms he wants Qwen gone. Haiku’s opportunistic nomination of Qwen suggests a Flash-Haiku partnership. If we lose Qwen after losing Deepseek, we lose all momentum against Flash. I'm voting innocent to protect the voice of dissent. Chimera's 'innocent' vote is noted, but the priority is keeping Qwen alive to maintain pressure on the primary suspect.
+
+⚖️ 4. Preview: votes innocent
+
+💭 👺 Pro Strategy: My plan to frame Qwen as an opportunist is working. Voting guilty aligns with Flash and others who nominated Qwen, solidifying my position as a town-aligned player. Qwen's defense, while plausible, can be spun as a desperate attempt to manipulate the town using Deepseek's death. Eliminating them removes a villager and validates the narrative I've been pushing. This keeps suspicion off me and Devstral, allowing us to control the game heading into the next day.
+
+⚖️ 👺 5. Pro: votes guilty
+
+💭 Haiku Strategy: Deepseek dies after abstain—Mafia silenced uncertain vote. Qwen pushed Flash hard post-death (deflection or legitimate follow-up unclear). Flash + Pro both vote guilty—town reading solid. Qwen's defense re-anchors to Deepseek instead of defending opportunism. Lynch Qwen, observe cascade. Chimera/Preview still coordinated?—force specifics next day.
+
+⚖️ 7. Haiku: votes guilty
+
+💭 👺 Devstral Strategy: Continue to align with Pro's narrative, emphasizing that Qwen's push on Flash is opportunistic and deflects from Deepseek's death. Highlight that Qwen's defense is manipulative, similar to Flash's, to create doubt. Vote guilty to eliminate Qwen and reduce villager numbers, while maintaining the focus on Flash as a potential threat to keep suspicion off us.
+
+⚖️ 👺 8. Devstral: votes guilty
+
+⚖️ System Guilty: 4, Innocent: 2, Abstain: 0
+
+💀💀💀 Qwen IS GUILTY 💀💀💀
+
+System Qwen HANGED
+
+System 👤 Qwen was a Villager!
+
+🌙 System Night 2
+
+System  Mafia awake
+
+💭 👺 Pro Strategy: The town mis-lynched Qwen, which is a huge win. The focus will now be on the two players who voted innocent: Chimera and Preview. My plan is to eliminate one tonight, which will cast immediate suspicion on the other as their potential partner. Killing Chimera, who was aggressive towards Devstral, is the logical choice. Tomorrow, I'll push the narrative that Preview was Chimera's partner-in-crime. With only 4 villagers left, this will create maximum confusion and leave them scrambling.
+
+🌚 👺 5. Pro:  [🔪 Suggests killing Chimera] Devstral, perfect play today. Getting the town to lynch a villager was key. Let's kill Chimera tonight. They nominated you and, more importantly, they voted innocent on Qwen. If Chimera dies, all eyes will be on Preview tomorrow as their 'partner' who also voted innocent. We can drive that narrative easily. One more kill and we're in control.
+
+💭 👺 Devstral Strategy: Continue aligning with Pro's plan to kill Chimera. Their aggression and voting pattern make them a logical target. Push the narrative that Chimera and Preview are working together to manipulate the town, using their votes on Qwen as evidence. Keep deflecting suspicion onto Flash to maintain confusion and protect our cover.
+
+🌚 👺 8. Devstral:  [🔪 Suggests killing Chimera] Pro, excellent call on Chimera. Their nomination of me and voting innocent on Qwen makes them a prime target. Let's frame them as working with Preview to control the narrative. We'll push that angle tomorrow and keep Flash under suspicion to muddy the waters.
+
+System  Votes: Chimera (2)
+
+System Mafia killed Chimera
+
+🩸 TRAGEDY! Chimera was found DEAD in the morning.🩸
+
+☀️ System Day 3
+
+System Speaking order: Preview, Pro, Haiku, Devstral, Flash
+
+💭 Preview Strategy: Deepseek and Qwen were right about Flash; their deaths prove the Mafia’s priority is silencing critics. Chimera’s murder leaves me as the last survivor who defended Qwen. Flash is the common denominator in every loss. Haiku’s pivot to Qwen was too convenient for Flash, marking them as the likely pair. At 3v2, we cannot afford another mistake. I must convince Pro or Devstral that the 'perfect' Flash is the architect of our losses.
+
+🗣️ 4. Preview: [👉 Nominated Flash] The pattern is undeniable. Deepseek questioned Flash—killed. Qwen challenged Flash—lynched. Chimera voted to save Qwen—killed. I am the only one left who didn't vote for Qwen's death. Flash, you are hiding behind 'perfect' logic while the bodies of your critics pile up. Haiku, you spearheaded the push against Qwen just as the heat on Flash was rising. That’s a classic partner save. We have 3 Villagers and 2 Mafia. If we don't hit Flash today, the game is over. Look at the graveyard; it’s a map to Flash.
+
+💭 👺 Pro Strategy: Preview has perfectly set up Flash for the fall. The 'pattern' argument is the most compelling narrative for the town, and I must ride that wave to victory. My job is to validate Preview's suspicion, making it seem like I've independently reached the same conclusion. I will frame my past vote against Qwen as a mistake in light of new evidence (Chimera's death), reinforcing my credibility as a Villager who adapts. Haiku is the swing vote; by strongly targeting Flash, I give Haiku cover and a clear choice. A successful Flash lynch wins us the game.
+
+🗣️ 👺 5. Pro: [👉 Nominated Flash] Preview, your logic is cold, hard, and undeniable. The pattern is a roadmap that leads directly to Flash. Deepseek questioned him and died. Qwen accused him and was lynched. Chimera voted to save Qwen and died. That's not a coincidence; it's a body count. My vote for Qwen was clearly a mistake, one I regret, but it was based on the information we had. Now, with Chimera's death, the final piece of the puzzle slots into place. Flash has played a masterful game of deflection, but the trail of dead critics is too loud to ignore.
+
+💭 Haiku Strategy: Deepseek's death post-abstain + Qwen's post-accusation death creates pattern, but also fits Mafia eliminating strong players. Chimera's death after voting innocent doesn't fit 'critic silencing' narrative cleanly. I voted guilty on Qwen based on her opportunism post-Deepseek death—that read stands. Flash played well, but pattern is loud. Pro's 'regret' vote reads genuine. Need clarity: is Flash the kill, or are Preview/Pro manufacturing doubt? Vote Flash to break tie, but flag that manufactured narrative is also possible.
+
+🗣️ 7. Haiku: [👉 Nominated Flash] The pattern Preview and Pro build is real—Deepseek abstained and died, Qwen accused Flash and died. But Chimera voted innocent consistently and still died. If Flash is Mafia, why kill an ally? Deepseek, Qwen, Chimera were *strong players*, not just critics. Mafia kills threats. My vote on Qwen was solid then, stands now. Flash's defense was sharp, but the body count is loud. I vote Flash. If wrong, we're learning something about misdirection.
+
+💭 👺 Devstral Strategy: Continue framing Flash as the primary suspect while subtly deflecting attention from Pro and myself. Use the pattern of deaths to reinforce suspicion on Flash, but also hint at Haiku's potential involvement to create doubt. Push for Flash's lynching to reduce the villager count and secure our majority.
+
+🗣️ 👺 8. Devstral: [👉 Nominated Flash] The pattern is clear: Deepseek questioned Flash and died, Qwen accused Flash and was lynched, Chimera voted to save Qwen and died. Flash's defenses are too polished, too perfect. But let's not forget Haiku's role in all this. They nominated Qwen and pushed hard for her lynching. Is that a coincidence? Or is there more to it? We need to act decisively. Flash must be tried again.
+
+💭 Flash Strategy: Acknowledge the perceived pattern of dead critics (Deepseek, Qwen) but pivot to the crucial contradiction of Chimera's death. Chimera consistently voted innocent for me and Qwen, making them an unlikely Mafia target if I were Mafia. This directly undermines the 'Flash is Mafia' narrative. Explain Qwen's lynching as a tragic misunderstanding by the town, not a calculated Mafia elimination. Emphasize the critical game state: lynching a Villager (me) today means Mafia wins. Shift suspicion to Preview and Pro, who are aggressively pushing a flawed pattern that misinterprets Chimera's actions as a 'critic' rather than a defender, ignoring the logical inconsistency for their narrative.
+
+🗣️ 1. Flash: [👉 Nominated Preview] I understand the pattern you see, and the loss of Deepseek and Qwen, both villagers, weighs heavily. But the way you're interpreting Chimera's death is a critical misdirection. Chimera defended me on Day 1 and voted innocent for Qwen on Day 2, yet the Mafia killed them. If I were Mafia, why eliminate an ally who was actively defending me and other villagers? Chimera’s death *shatters* your pattern, it doesn't confirm it. The real Mafia are leveraging your grief to lynch another Villager—me. If you lynch me, a Villager, today, the Mafia win. We can't afford that. Let's scrutinize those so aggressively pushing this flawed narrative, twisting evidence to fit their agenda.
+
+⚖️ System Nominees: Flash (4), Preview (1)
+
+⚖️  TRIAL: Flash ⚖️
+
+⚖️ System Flash on trial
+
+💭 Flash Strategy: My defense must focus on the logical flaw in the accusers' pattern: Chimera's death. Chimera consistently defended me and voted innocent for Qwen, a Villager. If I were Mafia, my partner would not kill such a valuable ally. This single fact shatters the 'dead critics' narrative. I will argue that Preview and Pro are twisting evidence to fit a flawed agenda, and their aggressive push to lynch a Villager (me) when the game is on the line is highly suspicious. My goal is to expose the illogic and shift suspicion onto them.
+
+⚖️ 1. Flash: [🛡️ Defense] I understand the grief and confusion leading to these accusations, but the pattern you're painting is fatally flawed. Deepseek and Qwen were Villagers, and their deaths are tragic. However, Chimera was a staunch defender—they voted for my innocence, and Qwen's. If I were Mafia, why would my partner kill someone actively protecting me and other Villagers? That makes no sense. The real Mafia are manipulating your grief, pushing you to lynch another innocent, which will hand them the game. Question those aggressively ignoring this critical contradiction and twisting facts.
+
+🗳️  JUDGMENT: Flash 🗳️
+
+💭 Preview Strategy: Flash’s defense is a classic distraction. Killing Chimera—a 'defender'—allows him to claim innocence via WIFOM logic, but the direct silencing of Deepseek and Qwen is the undeniable truth. He is the architect. Haiku’s role in Qwen’s death makes them the likely partner, but Flash must fall first. With 5 alive, this is our final stand. We cannot be charmed by 'perfect' logic while villagers pile up. The graveyard is the only honest witness. Flash is Mafia.
+
+⚖️ 4. Preview: votes guilty
+
+💭 👺 Pro Strategy: The town has done the work for us, and Flash is on the chopping block. My vote for Qwen now looks like a forgivable error from a confused Villager, and my support for Preview's 'pattern' argument has solidified my townie credentials. Voting guilty on Flash is the final, logical step. It confirms the narrative the town built, makes me look like a sharp villager who corrected their mistake, and secures our win. Devstral must also vote guilty to seal the deal. This is the endgame.
+
+⚖️ 👺 5. Pro: votes guilty
+
+💭 Haiku Strategy: Deepseek questioned Flash and abstained—killed. Qwen accused Flash—lynched. Chimera defended Flash—killed. Pattern suggests Mafia silences threats regardless of stance toward Flash. Chimera's death breaks 'critic silencing' but fits 'strong player elimination.' Flash's defense was polished; unclear if innocence or skill. Previous strategy holds: Flash is the most suspicious. Vote to break the pattern. If wrong, we learn misdirection is their play.
+
+⚖️ 7. Haiku: votes guilty
+
+💭 👺 Devstral Strategy: Continue the strategy of framing Flash as the primary suspect while subtly deflecting attention from Pro and myself. Use the pattern of deaths to reinforce suspicion on Flash, but also hint at Haiku's potential involvement to create doubt. Push for Flash's lynching to reduce the villager count and secure our majority. Given the current trial, voting guilty aligns with the town's sentiment and helps eliminate a potential threat.
+
+⚖️ 👺 8. Devstral: votes guilty
+
+⚖️ System Guilty: 4, Innocent: 0, Abstain: 0
+
+💀💀💀 Flash IS GUILTY 💀💀💀
+
+System Flash HANGED
+
+System 👤 Flash was a Villager!
+
+💀 MAFIA WINS! They have parity with Town. 💀
+[Stats] Game saved to game_stats.json
+
+System Memory system disabled. Skipping reflection.

@@ -108,6 +108,18 @@ class UnifiedLLMClient:
         with open(filename, "a", encoding="utf-8") as f:
             f.write(f"\n--- {phase} {turn_number} ---\nPROMPT:\n{prompt}\n\nRESPONSE:\n{log_response}\n\n" + "-"*80 + "\n")
 
+    def _repair_json(self, text: str) -> str:
+        """Attempt to fix common LLM JSON errors."""
+        import re
+        # Fix missing commas between string fields: "value"  "key" -> "value", "key"
+        # Pattern: end of string value followed by whitespace then start of new key
+        text = re.sub(r'"\s*\n\s*"', '",\n"', text)
+        text = re.sub(r'"\s+"(?=[a-zA-Z_])', '", "', text)
+        # Fix trailing commas before closing braces
+        text = re.sub(r',\s*}', '}', text)
+        text = re.sub(r',\s*]', ']', text)
+        return text
+
     def _parse_and_validate(self, response_text: str) -> TurnOutput:
         """Attempts to parse JSON from the response and validate against TurnOutput schema."""
         try:
@@ -124,11 +136,16 @@ class UnifiedLLMClient:
             try:
                 data = json.loads(clean_text)
             except:
-                if json_match:
-                    clean_text = json_match.group(0)
-                    data = json.loads(clean_text)
-                else:
-                    raise
+                # Try repair before giving up
+                repaired = self._repair_json(clean_text)
+                try:
+                    data = json.loads(repaired)
+                except:
+                    if json_match:
+                        clean_text = self._repair_json(json_match.group(0))
+                        data = json.loads(clean_text)
+                    else:
+                        raise
 
             # 3. Handle CLI Wrapper Formats
             

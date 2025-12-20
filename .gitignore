@@ -7,3 +7,4 @@ games
 .env1
 debug
 memories
+game_stats.json
