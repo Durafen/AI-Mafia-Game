@@ -236,7 +236,8 @@ class UnifiedLLMClient:
     def generate_turn(self, player_name: str, provider: str, model_name: str, system_prompt: str, turn_prompt: str, turn_number: int, phase: str = "Day", use_cli: bool = True) -> TurnOutput:
 
         full_prompt = f"{system_prompt}\n\n{turn_prompt}"
-        
+        print(f"🔄 [{player_name}] Sending prompt to {provider}/{model_name}...")
+
         max_retries = 3
         last_exception = None
 

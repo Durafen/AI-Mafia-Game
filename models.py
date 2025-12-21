@@ -94,7 +94,7 @@ OUTPUT: JSON only, no backticks.
             if game_state.on_trial == self.state.name:
                 vote_desc = "null"
             else:
-                vote_desc = "guilty/innocent/abstain"
+                vote_desc = "PlayerName_to_kill_or_abstain"
         elif game_state.phase == "Night" and self.state.role == "Mafia":
             vote_desc = "target_player_name"
         elif game_state.phase == "Night" and self.state.role == "Cop":
@@ -151,10 +151,8 @@ OUTPUT: JSON only, no backticks.
              if game_state.on_trial == self.state.name:
                  prompt += "TRIAL: You're on trial. Defend yourself. vote=null.\n"
              else:
-                 prompt += f"TRIAL: {game_state.on_trial} is on trial. Silent vote. Votes are public.\n"
-                 prompt += "vote=guilty (kill) / innocent (save) / abstain. Guilty > Innocent = hanged.\n"
-
-                 prompt += "Consider the implications of your vote.\n"
+                 prompt += f"TRIAL: Vote for who to eliminate (player name). TIE = all tied die.\n"
+                 prompt += "Consider the implications of your vote. Results are public.\n"
         elif game_state.phase == "LastWords":
              prompt += "SENTENCE: DEATH. This is your final chance to speak (max 100w). vote=null.\n"
              if self.state.role == "Mafia":
@@ -172,10 +170,11 @@ OUTPUT: JSON only, no backticks.
              # Day Phase
              prompt += f"DAY {game_state.turn}. {self.state.name}, analyze the situation, bring something new to the table, speak out, make it count."
              if self.state.role == "Cop":
-                 prompt += "\nSTRATEGY: Hide role to survive. Reveal if necessary."
+                 prompt += "\nSTRATEGY: Hide your role to survive. Reveal only if necessary."
              if game_state.turn == 1:
                  prompt += "\nNo voting on Day 1 (vote=null)."
              else:
+                 prompt += "\nNominees go to trial. One will be eliminated."
                  prompt += "\nUse 'vote' to nominate a suspect for trial (PlayerName ONLY or null)."
              prompt += "\n"
 

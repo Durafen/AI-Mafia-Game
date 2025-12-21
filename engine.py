@@ -8,7 +8,7 @@ from schemas import GameState, LogEntry, TurnOutput
 
 # TTS Config
 TTS_ENABLED = True   # Set to False to disable text-to-speech
-TTS_RATE = "+20%"    # Speech speed: "+20%" = 20% faster, "-10%" = 10% slower
+TTS_RATE = "+30%"    # Speech speed: "+30%" = 30% faster, "-10%" = 10% slower
 AUTO_CONTINUE = True # Set to True to run without user intervention
 MEMORY_ENABLED = False # Set to True to enable distinct memories per player from previous games
 REVEAL_ROLE_ON_DEATH = True # Set to False to hide role when player dies
@@ -142,7 +142,7 @@ class TTSEngine:
     async def _generate_audio(self, text: str, voice: str, output_path: str):
         """Generate audio file from text."""
         communicate = edge_tts.Communicate(text, voice, rate=self.rate)
-        await communicate.save(output_path)
+        await asyncio.wait_for(communicate.save(output_path), timeout=30.0)
 
     def speak(self, text: str, player_name: str = None, voice: str = None, background: bool = False, announce_name: bool = False):
         """Speak text. If background=True, runs in background thread. If announce_name=True, plays cached name in narrator voice first."""
@@ -180,7 +180,7 @@ class TTSEngine:
                     
                     subprocess.run(
                         ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path, "-c", "copy", combined_path],
-                        check=True, capture_output=True
+                        check=True, capture_output=True, timeout=30
                     )
                     os.unlink(list_path)
                     os.unlink(speech_path) # Delete original speech part
@@ -466,6 +466,47 @@ class GameEngine:
             return
         input("\n[PRESS ENTER TO CONTINUE NEXT ACTION] >> ")
 
+    def _collect_votes_concurrently(self, voters: List[Player], all_votes: dict, listener):
+        """Collect votes from all voters in up to 4 concurrent processes"""
+        import concurrent.futures
+
+        def collect_voter_vote(voter: Player):
+            """Collect one voter's single vote for who to kill (MANDATORY)"""
+            try:
+                # Set phase to Trial for voting context (they're voting on nominees)
+                output = voter.take_turn(self.state, self.state.turn)
+
+                prefix = "👺 " if voter.state.role == "Mafia" else ""
+                if output.strategy:
+                    self._print(f"\n💭 {prefix}{voter.state.name} Strategy: {output.strategy}")
+
+                # Get the player name they vote for - MANDATORY, no abstain
+                vote = (output.vote or "").lower().strip()
+                # Validate: must be a valid player name, not null/abstain
+                valid_targets = [p.state.name.lower() for p in self._get_living_players()]
+                if vote and vote in valid_targets:
+                    # Return with proper capitalization
+                    target = next(p.state.name for p in self._get_living_players() if p.state.name.lower() == vote)
+                    return voter.state.name, target
+                else:
+                    # Invalid vote - default to random player or first alive player
+                    default_target = self._get_living_players()[0].state.name
+                    self._print(f"[WARN] {voter.state.name} invalid vote '{vote}'. Defaulting to {default_target}")
+                    return voter.state.name, default_target
+            except Exception as e:
+                self._print(f"Error voting for {voter.state.name}: {e}")
+                default_target = self._get_living_players()[0].state.name
+                return voter.state.name, default_target
+
+        # Use ThreadPoolExecutor with max 4 workers for concurrent voting
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(collect_voter_vote, voter) for voter in voters]
+
+            for future in concurrent.futures.as_completed(futures):
+                voter_name, vote = future.result()
+                all_votes[voter_name] = vote
+                self.log("Trial", voter_name, "vote", f"votes for {vote}")
+
     def _save_game_stats(self, winner: str):
         """Save game stats to game_stats.json"""
         stats_path = "game_stats.json"
@@ -540,32 +581,44 @@ class GameEngine:
     
                 self.log("Day", "System", "PhaseStart", f"Day {self.state.turn}")
                 self._announce(f"Day {self.state.turn} begins")
-                
+
                 # Determine Speaking Order (Rotate based on Day)
                 # Day 1 start index 0, Day 2 start index 1, etc.
                 start_idx = (self.state.turn - 1) % len(self.players)
                 rotated_roster = self.players[start_idx:] + self.players[:start_idx]
                 ordered_living = [p for p in rotated_roster if p.state.is_alive]
-                
 
-    
+                # Start first speaker's turn in background while announcement plays
+                import concurrent.futures
+                first_speaker_future = None
+                executor = None
+                if ordered_living and ordered_living[0].state.is_alive:
+                    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                    first_speaker_future = executor.submit(ordered_living[0].take_turn, self.state, self.state.turn)
+
+
                 # 1. Speaking Round
                 living = self._get_living_players()
                 # Track nominations (suggestions)
                 nominations = {} # PlayerName -> VoteTarget
-    
+
                 phase_flow = " -> Night" if self.state.turn == 1 else " -> Trial -> Night"
                 self.log("Day", "System", "Info", f"Speaking order: {', '.join(p.state.name for p in ordered_living)}{phase_flow}")
-    
-                for player in ordered_living:
+
+                for i, player in enumerate(ordered_living):
                     # Double-check aliveness just in case state drifted
                     if not player.state.is_alive:
                         self._print(f"[DEBUG] Skipping dead player {player.state.name} in speaking order.")
                         continue
 
                     try:
-                        # Generate while previous TTS might still be playing
-                        output = player.take_turn(self.state, self.state.turn)
+                        # Use pre-generated output for first speaker if available
+                        if i == 0 and first_speaker_future:
+                            output = first_speaker_future.result()
+                            executor.shutdown()
+                        else:
+                            # Generate while previous TTS might still be playing
+                            output = player.take_turn(self.state, self.state.turn)
     
                         # Prepare TTS immediately (before waiting for previous to finish)
                         speech = output.speech or ""
@@ -616,42 +669,63 @@ class GameEngine:
                     # Wait for last speaker to finish
                     self.tts.wait_for_speech()
 
-                    # Sort by nomination count (highest first)
-                    sorted_nominees = sorted(nominee_counts.items(), key=lambda x: x[1], reverse=True)
+                    # Sort by day speaking order (not nomination count)
+                    sorted_nominees = sorted(nominee_counts.items(), key=lambda x: next((i for i, p in enumerate(ordered_living) if p.state.name == x[0]), float('inf')))
 
                     nominee_display = [f"{n} ({c})" for n, c in sorted_nominees]
-                    self.log("Trial", "System", "PhaseStart", f"Nominees: {', '.join(nominee_display)}")
+                    voter_count = len(self._get_living_players())
+                    self.log("Trial", "System", "PhaseStart", f"Nominees: {', '.join(nominee_display)} | Voters: {voter_count}")
                     self._announce(f"Nominees for trial: {', '.join(nominee_display)}")
 
-                    someone_died = False
-                    for accused_name, nom_count in sorted_nominees:
-                        if someone_died:
-                            break
+                    # --- DEFENSE PHASE ---
+                    # All nominees speak their defense one after another
+                    self.state.phase = "Trial"
+                    accused_players = []
 
+                    # Start first defendant's turn in background while announcements happen
+                    import concurrent.futures
+                    first_future = None
+                    executor = None
+                    if sorted_nominees:
+                        first_name = sorted_nominees[0][0]
+                        first_accused = self.active_players.get(first_name)
+                        if first_accused and first_accused.state.is_alive:
+                            self.state.on_trial = first_name
+                            # Announce first defendant BEFORE starting their turn
+                            self._print(f"\n⚖️  {first_name} speaks for defense ⚖️")
+                            # NOW start their turn in background while announcements play
+                            executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                            first_future = executor.submit(first_accused.take_turn, self.state, self.state.turn)
+
+                    for i, (accused_name, nom_count) in enumerate(sorted_nominees):
                         accused = self.active_players.get(accused_name)
                         if not accused or not accused.state.is_alive:
-                            self._print(f"[DEBUG] Skipping trial for {accused_name} (Dead or invalid).")
+                            self._print(f"[DEBUG] Skipping defense for {accused_name} (Dead or invalid).")
                             continue
 
-                        # --- TRIAL PHASE ---
-                        self.state.phase = "Trial"
+                        accused_players.append(accused)
                         self.state.on_trial = accused_name
-                        self.state.nominees = [accused_name]
 
-                        self._print(f"\n⚖️  TRIAL: {accused_name} ⚖️")
-                        self.log("Trial", "System", "Info", f"{accused_name} on trial")
-                        self._announce(f"{accused_name}, defend yourself")
+                        # For non-first defendants, announce here
+                        if i > 0:
+                            self._print(f"\n⚖️  {accused_name} speaks for defense ⚖️")
 
-                        # 1. Defense - accused speaks
+                        # Defense - accused speaks
                         try:
-                            output = accused.take_turn(self.state, self.state.turn)
+                            # Use pre-generated output for first defendant if available
+                            if i == 0 and first_future:
+                                output = first_future.result()
+                                executor.shutdown()
+                            else:
+                                output = accused.take_turn(self.state, self.state.turn)
 
-                            # Prepare TTS
+                            # Prepare TTS immediately (before waiting for previous)
                             speech = output.speech or ""
                             audio_path = None
                             if speech:
                                 audio_path = self.tts.prepare_speech(speech, accused_name, announce_name=True)
 
+                            # Wait for previous TTS while current is being prepared
                             self._wait_for_speech_with_pause(listener)
 
                             prefix = "👺 " if accused.state.role == "Mafia" else ""
@@ -659,6 +733,7 @@ class GameEngine:
                                 self._print(f"\n💭 {prefix}{accused_name} Strategy: {output.strategy}")
                             self.log("Trial", accused_name, "speak", f"[Defense] {speech}")
 
+                            # Play current TTS in background (next defendant can prepare while this plays)
                             if audio_path:
                                 self.tts.play_file(audio_path, background=True)
                         except Exception as e:
@@ -666,109 +741,122 @@ class GameEngine:
 
                         self._wait_for_next(listener)
 
-                        # 2. Judgment - all living players vote (except accused)
-                        self.tts.wait_for_speech()
-                        self._print(f"\n🗳️  JUDGMENT: {accused_name} 🗳️")
-                        self._announce(f"Vote on {accused_name}: guilty, innocent, or abstain")
+                    # --- CONCURRENT VOTING PHASE ---
+                    self.tts.wait_for_speech()
+                    self.state.on_trial = None  # Clear so defendants get voter prompt, not defend prompt
+                    self._print(f"\n🗳️  VOTING TIME 🗳️")
+                    self._announce(f"Voting time.")
 
-                        votes = {"guilty": 0, "innocent": 0, "abstain": 0}
-                        voters = [p for p in self._get_living_players() if p.state.name != accused_name]
+                    # Get all living voters
+                    voters = self._get_living_players()
 
-                        for voter in voters:
-                            # Safeguard
-                            if not voter.state.is_alive:
-                                continue
+                    # Dictionary to store votes: {voter_name: target_player_name}
+                    all_votes = {}
 
-                            try:
-                                output = voter.take_turn(self.state, self.state.turn)
-                                self._wait_for_speech_with_pause(listener)
+                    # Use concurrent voting with up to 4 processes
+                    self._collect_votes_concurrently(voters, all_votes, listener)
 
-                                prefix = "👺 " if voter.state.role == "Mafia" else ""
-                                if output.strategy:
-                                    self._print(f"\n💭 {prefix}{voter.state.name} Strategy: {output.strategy}")
+                    self._wait_for_next(listener)
 
-                                vote = (output.vote or "").lower().strip()
-                                if vote in ["guilty", "innocent"]:
-                                    votes[vote] += 1
-                                    self.log("Trial", voter.state.name, "vote", f"votes {vote}")
-                                    self.tts.speak(f"{voter.state.name} votes {vote}.", voter.state.name, background=True)
-                                else:
-                                    votes["abstain"] += 1
-                                    self.log("Trial", voter.state.name, "vote", "abstains")
-                                    self.tts.speak(f"{voter.state.name} abstains.", voter.state.name, background=True)
-                            except Exception as e:
-                                self._print(f"Error voting: {e}")
-                                votes["abstain"] += 1
-                                self.log("Trial", voter.state.name, "vote", "abstains")
+                    # --- RESULTS PHASE ---
+                    self.tts.wait_for_speech()
+                    self._print(f"\n📊 VOTING RESULTS 📊")
 
-                            self._wait_for_next(listener)
+                    # Tally votes by target player (no abstains - all votes count)
+                    vote_tally = {}  # target_player: [voters who voted for them]
 
-                        # 3. Verdict
-                        self.tts.wait_for_speech()
-                        self.log("Trial", "System", "VoteSummary", f"Guilty: {votes['guilty']}, Innocent: {votes['innocent']}, Abstain: {votes['abstain']}")
-                        self._announce(f"Guilty: {votes['guilty']}, Innocent: {votes['innocent']}, Abstain: {votes['abstain']}")
+                    for voter_name, target in all_votes.items():
+                        if target not in vote_tally:
+                            vote_tally[target] = []
+                        vote_tally[target].append(voter_name)
 
-                        if votes["guilty"] > votes["innocent"]:
-                            # GUILTY - death
-                            self._print(f"\n💀💀💀 {accused_name} IS GUILTY 💀💀💀")
+                    # Show results for each nominee
+                    someone_died = False
+                    for accused in accused_players:
+                        if someone_died:
+                            break
 
-                            # Check if game ends immediately after this death
-                            future_living = [p for p in self._get_living_players() if p.state.name != accused_name]
-                            future_mafia = sum(1 for p in future_living if p.state.role == "Mafia")
-                            future_town = sum(1 for p in future_living if p.state.role != "Mafia")
-                            
-                            game_ends = (future_mafia == 0) or (future_mafia >= future_town)
+                        accused_name = accused.state.name
+                        if not accused.state.is_alive:
+                            continue
 
-                            # --- LAST WORDS ---
-                            if not game_ends:
-                                self.state.phase = "LastWords"
-                                self._announce(f"{accused_name}, any last words?")
-                                try:
-                                    output = accused.take_turn(self.state, self.state.turn)
-                                    
-                                    # TTS
-                                    speech = output.speech or ""
-                                    audio_path = None
-                                    if speech:
-                                        audio_path = self.tts.prepare_speech(speech, accused_name, announce_name=True)
-                                    
-                                    self._wait_for_speech_with_pause(listener)
-                                    
-                                    prefix = "👺 " if accused.state.role == "Mafia" else ("👮 " if accused.state.role == "Cop" else "")
-                                    if output.strategy:
-                                        self._print(f"\n💭 {prefix}{accused_name} Strategy: {output.strategy}")
-                                    
-                                    self.log("LastWords", accused_name, "speak", output.speech)
-                                    
-                                    if audio_path:
-                                        self.tts.play_file(audio_path, background=True)
-                                        
-                                except Exception as e:
-                                    self._print(f"Error in last words: {e}")
-                                    
-                                self._wait_for_next(listener)
-                                self.state.phase = "Trial"
+                        votes_for_this = vote_tally.get(accused_name, [])
+                        vote_count = len(votes_for_this)
+                        voters_str = ", ".join(votes_for_this) if votes_for_this else "None"
 
-                            self.log("Result", "System", "Death", f"{accused_name} HANGED")
-                            self._announce(f"{accused_name} has been found guilty and hanged")
-                            accused.state.is_alive = False
-                            if self.state.reveal_role_on_death:
-                                if accused.state.role == "Mafia":
-                                    role_emoji = "👺"
-                                elif accused.state.role == "Cop":
-                                    role_emoji = "👮"
-                                else:
-                                    role_emoji = "👤"
-                                self.log("Result", "System", "RoleReveal", f"{role_emoji} {accused_name} was a {accused.state.role}!")
-                                self._announce(f"{accused_name} was a {accused.state.role}")
-                            someone_died = True
+                        result_msg = f"{accused_name} - {vote_count} votes from ({voters_str})"
+
+                        # Log and announce results
+                        self.log("Trial", "System", "VoteSummary", result_msg)
+                        self._announce(f"{accused_name} received {vote_count} votes")
+
+                    # Determine who gets eliminated (most votes)
+                    if vote_tally:
+                        max_votes = max(len(v) for v in vote_tally.values())
+                        most_voted = [k for k, v in vote_tally.items() if len(v) == max_votes]
+
+                        if len(most_voted) > 1:
+                            # Tie - eliminate all tied players
+                            self.log("Trial", "System", "TieBreak", f"Tie between {most_voted}. All are eliminated!")
+                            self._announce(f"Tie! {', '.join(most_voted)} eliminated.")
+                            kill_targets = most_voted
                         else:
-                            # INNOCENT - released
-                            self._print(f"\n✅ {accused_name} IS RELEASED ✅")
-                            self.log("Result", "System", "Released", f"{accused_name} released")
-                            self._announce(f"{accused_name} has been found innocent and released")
+                            kill_targets = most_voted
 
-                        self._wait_for_next(listener)
+                        # Eliminate all targets
+                        for kill_target in kill_targets:
+                            victim = self.active_players.get(kill_target)
+                            if victim and victim.state.is_alive:
+                                # Check if game ends immediately after this death
+                                future_living = [p for p in self._get_living_players() if p.state.name != kill_target]
+                                future_mafia = sum(1 for p in future_living if p.state.role == "Mafia")
+                                future_town = sum(1 for p in future_living if p.state.role != "Mafia")
+
+                                game_ends = (future_mafia == 0) or (future_mafia >= future_town)
+
+                                # --- LAST WORDS ---
+                                if not game_ends:
+                                    self.state.phase = "LastWords"
+                                    self._announce(f"{kill_target}, last words.")
+                                    try:
+                                        output = victim.take_turn(self.state, self.state.turn)
+
+                                        # TTS
+                                        speech = output.speech or ""
+                                        audio_path = None
+                                        if speech:
+                                            audio_path = self.tts.prepare_speech(speech, kill_target, announce_name=True)
+
+                                        self._wait_for_speech_with_pause(listener)
+
+                                        prefix = "👺 " if victim.state.role == "Mafia" else ("👮 " if victim.state.role == "Cop" else "")
+                                        if output.strategy:
+                                            self._print(f"\n💭 {prefix}{kill_target} Strategy: {output.strategy}")
+
+                                        self.log("LastWords", kill_target, "speak", f"[Last Words] {output.speech}")
+
+                                        if audio_path:
+                                            self.tts.play_file(audio_path, background=True)
+
+                                    except Exception as e:
+                                        self._print(f"Error in last words: {e}")
+
+                                    self._wait_for_next(listener)
+                                    self.state.phase = "Trial"
+
+                                self.log("Result", "System", "Death", f"{kill_target} eliminated.")
+                                self._announce(f"{kill_target} eliminated.")
+                                victim.state.is_alive = False
+                                if self.state.reveal_role_on_death:
+                                    if victim.state.role == "Mafia":
+                                        role_emoji = "👺"
+                                    elif victim.state.role == "Cop":
+                                        role_emoji = "👮"
+                                    else:
+                                        role_emoji = "👤"
+                                    self.log("Result", "System", "RoleReveal", f"{role_emoji} {kill_target} was a {victim.state.role}!")
+                                    self._print(f"{role_emoji} {kill_target} was a {victim.state.role}!")
+                                someone_died = True
 
                     # Clear trial state
                     self.state.on_trial = None
@@ -786,9 +874,9 @@ class GameEngine:
                 self.state.phase = "Night"
                 self.log("Night", "System", "PhaseStart", f"Night {self.state.turn}")
                 self._announce(f"Night {self.state.turn} begins")
-    
+
                 mafia_alive = [p for p in self._get_living_players() if p.state.role == "Mafia"]
-                
+
                 if not mafia_alive:
                     # Game over loop will catch this next iter
                     pass
@@ -796,15 +884,28 @@ class GameEngine:
 
                     # --- MAFIA TURN ---
                     self.log("Night", "System", "MafiaWake", "Mafia awake", is_secret=True, target_log="Mafia")
-                    
+
+                    # Start first Mafia's turn in background while announcement plays
+                    import concurrent.futures
+                    first_mafia_future = None
+                    executor = None
+                    if mafia_alive and mafia_alive[0].state.is_alive:
+                        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                        first_mafia_future = executor.submit(mafia_alive[0].take_turn, self.state, self.state.turn)
+
                     night_victim = None
                     mafia_votes = {}
-                    for m_player in mafia_alive:
+                    for i, m_player in enumerate(mafia_alive):
                         if not m_player.state.is_alive:
                              continue
                         try:
-                            # Generate while previous TTS might still be playing
-                            output = m_player.take_turn(self.state, self.state.turn)
+                            # Use pre-generated output for first Mafia if available
+                            if i == 0 and first_mafia_future:
+                                output = first_mafia_future.result()
+                                executor.shutdown()
+                            else:
+                                # Generate while previous TTS might still be playing
+                                output = m_player.take_turn(self.state, self.state.turn)
 
                             target = output.vote
                             # Normalize: strip "kill " prefix if LLM included it
@@ -945,61 +1046,85 @@ class GameEngine:
                         except Exception as e:
                             self._print(f"Cop Error: {e}")
                         
-                        self._wait_for_next(listener)
-    
-                        self._wait_for_next(listener)
-    
-                    # --- APPLY MAFIA KILL (Delayed) ---
+                        # Don't wait here - start last words prompt immediately while TTS plays
+
+                    # --- START LAST WORDS PROMPT IN BACKGROUND (while Cop TTS plays) ---
+                    night_audio_path = None
+                    night_victim_speech = ""
+                    night_victim_strategy = None
+                    last_words_future = None
+                    lw_executor = None
+                    death_role_emoji = ""
+
                     if night_victim and night_victim in self.active_players:
                         victim = self.active_players[night_victim]
                         if victim.state.is_alive:
+                            # Mark dead and set phase for prompt context
                             victim.state.is_alive = False
-                            self.log("Night", "System", "Kill", f"Mafia killed {night_victim}", is_secret=True, target_log="Mafia")
+                            self.state.phase = "LastWords"
+
+                            # Determine role emoji
+                            if victim.state.role == "Mafia":
+                                death_role_emoji = "👺"
+                            elif victim.state.role == "Cop":
+                                death_role_emoji = "👮"
+                            else:
+                                death_role_emoji = "👤"
+
+                            # Add death to public log BEFORE prompt (so victim sees it) - no print yet
+                            self.state.public_logs.append(LogEntry(
+                                turn=self.state.turn, phase="Night", actor="System",
+                                action="Death", content=f"{night_victim} was killed by Mafia"
+                            ))
+                            if self.state.reveal_role_on_death:
+                                self.state.public_logs.append(LogEntry(
+                                    turn=self.state.turn, phase="Night", actor="System",
+                                    action="RoleReveal", content=f"{death_role_emoji} {night_victim} was a {victim.state.role}"
+                                ))
+
+                            # Start last words prompt in background (while Cop TTS still playing)
+                            lw_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                            last_words_future = lw_executor.submit(victim.take_turn, self.state, self.state.turn)
+
+                    # NOW wait for Cop's TTS to finish before revealing death
+                    self.tts.wait_for_speech()
+
+                    # --- APPLY MAFIA KILL (Secret log) ---
+                    if night_victim and night_victim in self.active_players:
+                        victim = self.active_players[night_victim]
+                        self.log("Night", "System", "Kill", f"Mafia killed {night_victim}", is_secret=True, target_log="Mafia")
+
+                        # Get last words result (should be ready or almost ready)
+                        if last_words_future:
+                            try:
+                                output = last_words_future.result()
+                                lw_executor.shutdown()
+                                night_victim_speech = output.speech or ""
+                                night_victim_strategy = output.strategy
+                                if night_victim_speech:
+                                    night_audio_path = self.tts.prepare_speech(night_victim_speech, night_victim, announce_name=True)
+                            except Exception as e:
+                                self._print(f"Error preparing night last words: {e}")
 
                     # --- DEATH REVEAL (Morning) ---
                     if night_victim:
-                         self._print(f"\n🩸 TRAGEDY! {night_victim} was found DEAD in the morning.🩸")
-                         self._announce(f"{night_victim} was killed during the night")
-                         self.log("Night", "System", "Death", f"{night_victim} found dead")
-
-                         # Role Reveal
-                         if self.state.reveal_role_on_death:
-                              victim = self.active_players[night_victim]
-                              if victim.state.role == "Mafia":
-                                  role_emoji = "👺"
-                              elif victim.state.role == "Cop":
-                                  role_emoji = "👮"
-                              else:
-                                  role_emoji = "👤"
-                              self.log("Night", "System", "RoleReveal", f"{role_emoji} {night_victim} was a {victim.state.role}!")
-                              self._announce(f"{night_victim} was a {victim.state.role}")
-
-                         # --- LAST WORDS FOR NIGHT VICTIM ---
                          victim = self.active_players[night_victim]
-                         self.state.phase = "LastWords"
-                         self._announce(f"{night_victim}, any last words?")
-                         try:
-                             output = victim.take_turn(self.state, self.state.turn)
+                         self._print(f"\n🩸 TRAGEDY! {night_victim} was found DEAD in the morning.🩸")
+                         if self.state.reveal_role_on_death:
+                             self._print(f"{death_role_emoji} {night_victim} was a {victim.state.role}!")
+                         self._announce(f"{night_victim} was killed during the night")
 
-                             # TTS
-                             speech = output.speech or ""
-                             audio_path = None
-                             if speech:
-                                 audio_path = self.tts.prepare_speech(speech, night_victim, announce_name=True)
+                         # --- LAST WORDS FOR NIGHT VICTIM (Already prepared) ---
+                         self._announce(f"{night_victim}, last words.")
 
-                             self._wait_for_speech_with_pause(listener)
+                         prefix = "👺 " if victim.state.role == "Mafia" else ("👮 " if victim.state.role == "Cop" else "")
+                         if night_victim_strategy:
+                             self._print(f"\n💭 {prefix}{night_victim} Strategy: {night_victim_strategy}")
 
-                             prefix = "👺 " if victim.state.role == "Mafia" else ("👮 " if victim.state.role == "Cop" else "")
-                             if output.strategy:
-                                 self._print(f"\n💭 {prefix}{night_victim} Strategy: {output.strategy}")
+                         self.log("LastWords", night_victim, "speak", f"[Last Words] {night_victim_speech}")
 
-                             self.log("LastWords", night_victim, "speak", output.speech)
-
-                             if audio_path:
-                                 self.tts.play_file(audio_path, background=True)
-
-                         except Exception as e:
-                             self._print(f"Error in night last words: {e}")
+                         if night_audio_path:
+                             self.tts.play_file(night_audio_path, background=True)
 
                          self._wait_for_next(listener)
 
