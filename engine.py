@@ -1,13 +1,14 @@
 import random
 import json
 import os
+import re
 import shutil
 import time
 import concurrent.futures
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
 
-from models import Player
+from models import Player, HumanPlayer
 from api_clients import UnifiedLLMClient
 from schemas import GameState, LogEntry, TurnOutput
 from config import (
@@ -46,15 +47,34 @@ class GameEngine:
         # Initialize TTS
         self.tts = TTSEngine(enabled=tts_enabled)
 
+        # Human player mode tracking
+        self.human_mode = False
+        self.human_player: Optional[Player] = None
+        self.human_role: Optional[str] = None
+        self.listener: Optional[InputListener] = None  # Set in run()
 
-
-    def _print(self, text):
-        print(text)
+    def _log_to_file(self, text: str):
+        """Write to game log file only"""
         try:
             with open(self.game_log_path, "a", encoding='utf-8') as f:
                 f.write(str(text) + "\n")
         except:
             pass
+
+    def _print_console(self, text: str):
+        """Print to console only"""
+        print(text)
+
+    def _is_human_alive(self) -> bool:
+        """Check if human player is still alive (for spoiler filtering)"""
+        return self.human_player is not None and self.human_player.state.is_alive
+
+    def _print(self, text: str, spoiler: bool = False):
+        """Print to both console and file. If spoiler=True and human alive, console is skipped."""
+        self._log_to_file(text)
+        # Show all spoilers if human is dead (spectator mode)
+        if not (spoiler and self.human_mode and self._is_human_alive()):
+            self._print_console(text)
 
     def _announce(self, text: str, background: bool = False):
         """Speak system announcement with narrator voice"""
@@ -69,8 +89,13 @@ class GameEngine:
             actor_display = f"{idx}. {actor}:"
 
             # Add role icon for terminal display only
+            # In human mode, only show icon for human's own role (unless human is dead = spectator)
             if player.state.role in ("Mafia", "Cop"):
-                actor_display = f"{self._get_role_emoji(player.state.role)} {actor_display}"
+                show_icon = (not self.human_mode or
+                            not self._is_human_alive() or
+                            (self.human_player and player.state.name == self.human_player.state.name))
+                if show_icon:
+                    actor_display = f"{self._get_role_emoji(player.state.role)} {actor_display}"
 
         # Append vote text to content for persistent history
         if vote_target:
@@ -118,27 +143,39 @@ class GameEngine:
         
         if is_secret:
             # Route secret logs to correct private log based on actor/context
-            
+            effective_target = target_log  # Track for spoiler determination
+
             # Explicit override
             if target_log == "Cop":
                  self.state.cop_logs.append(entry)
             elif target_log == "Mafia":
                  self.state.mafia_logs.append(entry)
-            
+
             # Auto-detect Cop actions
             elif (player and player.state.role == "Cop") or action == "investigate":
                  self.state.cop_logs.append(entry)
-            
+                 effective_target = "Cop"
+
             # Auto-detect Cop System logs
             elif str(content).startswith("Investigation Result") or str(content).startswith("Investigation failed"):
                  self.state.cop_logs.append(entry)
-            
+                 effective_target = "Cop"
+
             # Default: Mafia (including System messages for Night phase calls)
             else:
                  self.state.mafia_logs.append(entry)
+                 effective_target = "Mafia"
+
+            # Determine if this is a spoiler for human
+            is_spoiler = True
+            if self.human_mode and self.human_role:
+                if effective_target == "Mafia" and self.human_role == "Mafia":
+                    is_spoiler = False
+                elif effective_target == "Cop" and self.human_role == "Cop":
+                    is_spoiler = False
 
             display_content = content.replace("[Nominated", "[👉 Nominated").replace("[Suggests killing", "[🔪 Suggests killing").replace("[Defense]", "[🛡️ Defense]").replace("votes guilty", "👎 votes guilty").replace("votes innocent", "👍 votes innocent").replace("abstains", "⏸️ abstains")
-            self._print(f"\n{display_icon}{actor_display} {vote_str} {display_content}")
+            self._print(f"\n{display_icon}{actor_display} {vote_str} {display_content}", spoiler=is_spoiler)
         else:
             self.state.public_logs.append(entry)
             display_content = content.replace("[Nominated", "[👉 Nominated").replace("[Suggests killing", "[🔪 Suggests killing").replace("[Defense]", "[🛡️ Defense]").replace("votes guilty", "👎 votes guilty").replace("votes innocent", "👍 votes innocent").replace("abstains", "⏸️ abstains")
@@ -166,7 +203,7 @@ class GameEngine:
              cop_index = random.choice(remaining_indices)
 
         mafia_names = []
-        
+
         # Create Players
         for i, config in enumerate(roster):
             role = "Villager"
@@ -174,17 +211,29 @@ class GameEngine:
                 role = "Mafia"
             elif i == cop_index:
                 role = "Cop"
-            
-            p = Player(
-                name=config["name"],
-                role=role,
-                provider=config["provider"],
-                model_name=config["model"],
-                client=self.client,
-                player_index=i+1,
-                use_cli=config.get("use_cli", True),
-                memory_enabled=MEMORY_ENABLED
-            )
+
+            # Check if this is a human player
+            if config.get("provider") == "human":
+                p = HumanPlayer(
+                    name=config["name"],
+                    role=role,
+                    player_index=i+1
+                )
+                self.human_mode = True
+                self.human_player = p
+                self.human_role = role
+                self.client.suppress_console = True  # Hide debug prints in human mode
+            else:
+                p = Player(
+                    name=config["name"],
+                    role=role,
+                    provider=config["provider"],
+                    model_name=config["model"],
+                    client=self.client,
+                    player_index=i+1,
+                    use_cli=config.get("use_cli", True),
+                    memory_enabled=MEMORY_ENABLED
+                )
             self.players.append(p)
             self.state.players.append(p.state)
             self.active_players[p.state.name] = p
@@ -202,7 +251,18 @@ class GameEngine:
                 if partner:
                     p.set_partner(partner[0])
 
-        self._print(f"[System] Game Initialized. Mafia are: {', '.join(mafia_names)}")
+        # Show human their role privately
+        if self.human_mode and self.human_player:
+            role_emoji = self._get_role_emoji(self.human_role)
+            self._print_console(f"\n{'='*40}")
+            self._print_console(f"You are {self.human_player.state.name}")
+            self._print_console(f"Your role: {role_emoji} {self.human_role}")
+            if self.human_role == "Mafia" and self.human_player.partner_name:
+                self._print_console(f"Your partner: {self.human_player.partner_name}")
+            self._print_console(f"{'='*40}\n")
+
+        # Log mafia reveal (spoiler for human unless they're mafia)
+        self._print(f"[System] Game Initialized. Mafia are: {', '.join(mafia_names)}", spoiler=True)
         self.log("Setup", "System", "MafiaReveal", f"Mafia: {', '.join(mafia_names)}", is_secret=True, target_log="Mafia")
         
         cop_names = [p.state.name for p in self.players if p.state.role == "Cop"]
@@ -258,11 +318,28 @@ class GameEngine:
         """Print strategy with role-appropriate prefix."""
         if output.strategy:
             prefix = self._get_strategy_prefix(player)
-            self._print(f"\n💭 {prefix}{player.state.name} Strategy: {output.strategy}")
+            strategy_line = f"\n💭 {prefix}{player.state.name} Strategy: {output.strategy}"
+            # In human mode, all strategies are spoilers (hidden from console)
+            self._print(strategy_line, spoiler=self.human_mode)
+
+    def _take_player_turn(self, player: Player) -> TurnOutput:
+        """Take a player's turn, handling terminal mode for human players."""
+        is_human = isinstance(player, HumanPlayer)
+        if is_human and self.listener:
+            self.listener.pause_for_input()
+        try:
+            output = player.take_turn(self.state, self.state.turn)
+        finally:
+            if is_human and self.listener:
+                self.listener.resume_cbreak()
+        return output
 
     def _start_background_turn(self, player: Player) -> Tuple[Optional[concurrent.futures.Future], Optional[concurrent.futures.ThreadPoolExecutor]]:
         """Start a player's turn in background thread. Returns (future, executor)."""
         if not player:
+            return None, None
+        # Don't background human players - they need interactive input
+        if isinstance(player, HumanPlayer):
             return None, None
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         future = executor.submit(player.take_turn, self.state, self.state.turn)
@@ -295,7 +372,8 @@ class GameEngine:
 
                 if output.strategy:
                     prefix = self._get_strategy_prefix(voter)
-                    self._print(f"\n💭 {prefix}{voter.state.name} Strategy: {output.strategy}")
+                    strategy_line = f"\n💭 {prefix}{voter.state.name} Strategy: {output.strategy}"
+                    self._print(strategy_line, spoiler=self.human_mode)
 
                 # Get the player name they vote for - MANDATORY, no abstain
                 vote = (output.vote or "").lower().strip()
@@ -315,14 +393,44 @@ class GameEngine:
                 default_target = nominees[0]
                 return voter.state.name, default_target
 
-        # Use ThreadPoolExecutor with max 4 workers for concurrent voting
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            futures = [executor.submit(collect_voter_vote, voter) for voter in voters]
+        # Separate human player from AI voters
+        human_voter = None
+        ai_voters = []
+        for voter in voters:
+            if isinstance(voter, HumanPlayer):
+                human_voter = voter
+            else:
+                ai_voters.append(voter)
 
-            for future in concurrent.futures.as_completed(futures):
-                voter_name, vote = future.result()
-                all_votes[voter_name] = vote
-                self.log("Trial", voter_name, "vote", f"votes for {vote}")
+        # Collect human vote first (needs terminal input)
+        if human_voter:
+            voter_name, vote = None, None
+            try:
+                output = self._take_player_turn(human_voter)
+                vote = (output.vote or "").lower().strip()
+                valid_targets = [n.lower() for n in nominees]
+                if vote and vote in valid_targets:
+                    vote = next(n for n in nominees if n.lower() == vote)
+                else:
+                    vote = nominees[0]
+                    self._print(f"[WARN] Invalid vote. Defaulting to {vote}")
+                voter_name = human_voter.state.name
+            except Exception as e:
+                self._print(f"Error voting for {human_voter.state.name}: {e}")
+                vote = nominees[0]
+                voter_name = human_voter.state.name
+            all_votes[voter_name] = vote
+            self.log("Trial", voter_name, "vote", f"votes for {vote}")
+
+        # Use ThreadPoolExecutor with max 4 workers for concurrent AI voting
+        if ai_voters:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                futures = [executor.submit(collect_voter_vote, voter) for voter in ai_voters]
+
+                for future in concurrent.futures.as_completed(futures):
+                    voter_name, vote = future.result()
+                    all_votes[voter_name] = vote
+                    self.log("Trial", voter_name, "vote", f"votes for {vote}")
 
     def _save_game_stats(self, winner: str):
         """Save game stats to game_stats.json"""
@@ -383,6 +491,7 @@ class GameEngine:
 
     def run(self):
         with InputListener() as listener:
+            self.listener = listener  # Store for human input handling
             self.setup_game()
     
             while True:
@@ -431,7 +540,7 @@ class GameEngine:
                             output = self._get_background_result(first_speaker_future, executor)
                         else:
                             # Generate while previous TTS might still be playing
-                            output = player.take_turn(self.state, self.state.turn)
+                            output = self._take_player_turn(player)
     
                         # Prepare TTS immediately (before waiting for previous to finish)
                         speech = output.speech or ""
@@ -480,8 +589,8 @@ class GameEngine:
                     # Wait for last speaker to finish
                     self.tts.wait_for_speech()
 
-                    # Sort by day speaking order (not nomination count)
-                    sorted_nominees = sorted(nominee_counts.items(), key=lambda x: next((i for i, p in enumerate(ordered_living) if p.state.name == x[0]), float('inf')))
+                    # Sort by nomination count (least to most votes)
+                    sorted_nominees = sorted(nominee_counts.items(), key=lambda x: x[1])
 
                     nominee_display = [f"{n} ({c})" for n, c in sorted_nominees]
                     voter_count = len(self._get_living_players())
@@ -525,7 +634,7 @@ class GameEngine:
                             if i == 0 and first_future:
                                 output = self._get_background_result(first_future, executor)
                             else:
-                                output = accused.take_turn(self.state, self.state.turn)
+                                output = self._take_player_turn(accused)
 
                             # Prepare TTS immediately (before waiting for previous)
                             speech = output.speech or ""
@@ -644,16 +753,29 @@ class GameEngine:
                             continue
 
                         # First victim uses pre-generated last words
-                        if i == 0 and trial_last_words_future and not trial_game_ends:
-                            try:
-                                output = self._get_background_result(trial_last_words_future, trial_lw_executor)
+                        if i == 0 and not trial_game_ends:
+                            output = None
+                            if trial_last_words_future:
+                                try:
+                                    output = self._get_background_result(trial_last_words_future, trial_lw_executor)
+                                except Exception as e:
+                                    self._print(f"Error in last words: {e}")
+                            elif isinstance(trial_victim, HumanPlayer):
+                                # Human player needs interactive input for last words
+                                self._announce(f"{kill_target}, last words.")
+                                try:
+                                    output = self._take_player_turn(trial_victim)
+                                except Exception as e:
+                                    self._print(f"Error getting human last words: {e}")
 
+                            if output:
                                 speech = output.speech or ""
                                 audio_path = None
                                 if speech:
                                     audio_path = self.tts.prepare_speech(speech, kill_target, announce_name=True)
 
-                                self._announce(f"{kill_target}, last words.")
+                                if not isinstance(trial_victim, HumanPlayer):
+                                    self._announce(f"{kill_target}, last words.")
 
                                 self._print_strategy(victim, output)
 
@@ -664,9 +786,6 @@ class GameEngine:
 
                                 self._wait_for_next(listener)
                                 self.tts.wait_for_speech()
-
-                            except Exception as e:
-                                self._print(f"Error in last words: {e}")
 
                             self.state.phase = "Trial"
 
@@ -682,7 +801,7 @@ class GameEngine:
                                 victim.state.is_alive = False
                                 self._announce(f"{kill_target}, last words.")
                                 try:
-                                    output = victim.take_turn(self.state, self.state.turn)
+                                    output = self._take_player_turn(victim)
                                     speech = output.speech or ""
                                     audio_path = None
                                     if speech:
@@ -757,7 +876,7 @@ class GameEngine:
                                 output = self._get_background_result(first_mafia_future, executor)
                             else:
                                 # Generate while previous TTS might still be playing
-                                output = m_player.take_turn(self.state, self.state.turn)
+                                output = self._take_player_turn(m_player)
 
                             target = output.vote
                             # Normalize: strip "kill " prefix if LLM included it
@@ -766,21 +885,22 @@ class GameEngine:
                             action_tag = f"[Suggests killing {target}] " if target else ""
                             spoken_action = f"{m_player.state.name} suggests killing {target}." if target else ""
                             
-                            # Prepare TTS
+                            # Prepare TTS (skip if human is not Mafia - spoiler)
                             speech = output.speech or ""
                             tts_text = f"{speech} {spoken_action}".strip() if speech else spoken_action
                             audio_path = None
-                            if tts_text:
+                            should_play_tts = not self.human_mode or self.human_role == "Mafia"
+                            if tts_text and should_play_tts:
                                  audio_path = self.tts.prepare_speech(tts_text, m_player.state.name, announce_name=True)
 
                             # Wait for previous TTS before displaying
                             self._wait_for_speech_with_pause(listener)
 
                             self._print_strategy(m_player, output)
-                            
+
                             content = f"{action_tag}{output.speech or ''}"
                             self.log("Night", m_player.state.name, "whisper", content, is_secret=True, target_log="Mafia")
-    
+
                             # Play pre-generated audio
                             if audio_path:
                                 self.tts.play_file(audio_path, background=True)
@@ -832,23 +952,24 @@ class GameEngine:
                     cop_alive = [p for p in self._get_living_players() if p.state.role == "Cop"]
                     for cop in cop_alive:
                         if not cop.state.is_alive: continue # Safeguard (if died tonight)
-                        
+
                         try:
                             # Cop Turn
-                            output = cop.take_turn(self.state, self.state.turn)
+                            output = self._take_player_turn(cop)
 
                             target_name = output.vote
                             # Normalize
                             if target_name and target_name.lower().startswith("investigate "):
                                 target_name = target_name[12:].strip()
 
-                            # Prepare TTS
+                            # Prepare TTS (skip if human is not Cop - spoiler)
                             speech = output.speech or ""
                             spoken_action = f"{cop.state.name} investigating {target_name}." if target_name else ""
                             tts_text = f"{speech} {spoken_action}".strip() if speech else spoken_action
-                            
+
                             audio_path = None
-                            if tts_text:
+                            should_play_tts = not self.human_mode or self.human_role == "Cop"
+                            if tts_text and should_play_tts:
                                 audio_path = self.tts.prepare_speech(tts_text, cop.state.name, announce_name=True)
 
                             self._wait_for_speech_with_pause(listener)
@@ -873,7 +994,9 @@ class GameEngine:
                                     result = "Mafia" if target.state.role == "Mafia" else "Innocent"
 
                                     investigation_msg = f"Investigation Result: {target_name} is {result}."
-                                    self._print(f"\n🔍 {cop.state.name} checks {target_name}... Result: {result}")
+                                    # Spoiler unless human is Cop
+                                    is_spoiler = self.human_mode and self.human_role != "Cop"
+                                    self._print(f"\n🔍 {cop.state.name} checks {target_name}... Result: {result}", spoiler=is_spoiler)
 
                                     # Log to Cop's secret log
                                     self.state.cop_logs.append(LogEntry(
@@ -927,7 +1050,11 @@ class GameEngine:
                                 ))
 
                             # Start last words prompt in background (while Cop TTS still playing)
-                            last_words_future, lw_executor = self._start_background_turn(victim)
+                            # For human players, we can't use background - will handle after TTS
+                            if isinstance(victim, HumanPlayer):
+                                last_words_future, lw_executor = None, None
+                            else:
+                                last_words_future, lw_executor = self._start_background_turn(victim)
 
                     # NOW wait for Cop's TTS to finish before revealing death
                     self.tts.wait_for_speech()
@@ -947,26 +1074,41 @@ class GameEngine:
                                     night_audio_path = self.tts.prepare_speech(night_victim_speech, night_victim, announce_name=True)
                             except Exception as e:
                                 self._print(f"Error preparing night last words: {e}")
+                        elif isinstance(victim, HumanPlayer):
+                            # Human player needs interactive input for last words
+                            try:
+                                output = self._take_player_turn(victim)
+                                night_victim_speech = output.speech or ""
+                                night_victim_strategy = None  # Human has no strategy
+                                if night_victim_speech:
+                                    night_audio_path = self.tts.prepare_speech(night_victim_speech, night_victim, announce_name=True)
+                            except Exception as e:
+                                self._print(f"Error getting human last words: {e}")
 
                     # --- DEATH REVEAL (Morning) ---
                     if night_victim:
                          victim = self.active_players[night_victim]
-                         self._print(f"\n🩸 TRAGEDY! {night_victim} was found DEAD in the morning.🩸")
-                         if self.state.reveal_role_on_death:
-                             self._print(f"{death_role_emoji} {night_victim} was a {victim.state.role}!")
-                         self._announce(f"{night_victim} was killed during the night")
 
-                         # --- LAST WORDS FOR NIGHT VICTIM (Already prepared) ---
+                         # --- LAST WORDS FIRST ---
                          self._announce(f"{night_victim}, last words.")
 
                          if night_victim_strategy:
                              prefix = self._get_strategy_prefix(victim)
-                             self._print(f"\n💭 {prefix}{night_victim} Strategy: {night_victim_strategy}")
+                             strategy_line = f"\n💭 {prefix}{night_victim} Strategy: {night_victim_strategy}"
+                             self._print(strategy_line, spoiler=self.human_mode)
 
                          self.log("LastWords", night_victim, "speak", f"[Last Words] {night_victim_speech}")
 
                          if night_audio_path:
                              self.tts.play_file(night_audio_path, background=True)
+
+                         # --- DEATH ANNOUNCEMENT ---
+                         self._print(f"\n🩸 TRAGEDY! {night_victim} was found DEAD in the morning.🩸")
+                         self._announce(f"{night_victim} was killed during the night")
+
+                         # --- ROLE REVEAL LAST ---
+                         if self.state.reveal_role_on_death:
+                             self._print(f"{death_role_emoji} {night_victim} was a {victim.state.role}!")
 
                          self._wait_for_next(listener)
 

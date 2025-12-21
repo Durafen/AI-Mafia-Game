@@ -283,9 +283,62 @@ IMPORTANT:
             )
             
             return output.strategy.strip()
-            
+
         except Exception as e:
             print(f"Error generating memory for {self.state.name}: {e}")
             return self.memory # Return old memory on failure
 
+
+class HumanPlayer(Player):
+    """Human-controlled player - prompts for terminal input instead of LLM"""
+
+    def __init__(self, name: str, role: str, player_index: int):
+        self.state = PlayerState(
+            name=name,
+            role=role,
+            provider="human",
+            model_name="human",
+            use_cli=False
+        )
+        self.player_index = player_index
+        self.partner_name: Optional[str] = None
+        self.memory: str = ""
+        self.memory_enabled = False
+        self.client = None
+
+    def take_turn(self, game_state: GameState, turn_number: int) -> TurnOutput:
+        """Prompt human for speech and vote based on phase/role"""
+        phase = game_state.phase
+
+        # Villager sleeps at night - no input needed
+        if phase == "Night" and self.state.role == "Villager":
+            print("\n>>> You fall asleep...")
+            return TurnOutput(strategy=None, speech=None, vote=None)
+
+        speech = None
+        vote = None
+
+        # Speech prompt
+        if phase in ["Day", "LastWords"]:
+            speech = input("\n>>> Your speech: ").strip() or None
+        elif phase == "Trial" and game_state.on_trial == self.state.name:
+            speech = input("\n>>> Your defense: ").strip() or None
+        elif phase == "Night" and self.state.role in ["Mafia", "Cop"]:
+            speech = input("\n>>> Your thoughts: ").strip() or None
+
+        # Vote prompt
+        if phase == "Day" and game_state.turn > 1:
+            vote = input(">>> Nominate (or Enter to skip): ").strip() or None
+        elif phase == "Trial" and game_state.on_trial != self.state.name:
+            vote = input(">>> Vote for: ").strip() or None
+        elif phase == "Night" and self.state.role == "Mafia":
+            vote = input(">>> Kill target: ").strip() or None
+        elif phase == "Night" and self.state.role == "Cop":
+            vote = input(">>> Investigate: ").strip() or None
+
+        return TurnOutput(strategy=None, speech=speech, vote=vote)
+
+    def reflect_on_game(self, game_state: GameState, winner: str) -> str:
+        """Human doesn't need memory file"""
+        return ""
 

@@ -54,10 +54,13 @@ ROSTER_CONFIG = [
 
     # QWEN (via qwen CLI)
     {"active": True, "use_cli": True, "name": "Qwen", "provider": "qwen", "model": "coder-model", "voice": "en-ZA-LukeNeural"},
-    {"active": True, "use_cli": True, "name": "Ling", "provider": "qwen", "model": "coder-model", "voice": "en-ZA-LeahNeural"},
+    {"active": False, "use_cli": True, "name": "Ling", "provider": "qwen", "model": "coder-model", "voice": "en-ZA-LeahNeural"},
     {"active": False, "use_cli": True, "name": "Chang", "provider": "qwen", "model": "coder-model", "voice": "en-GB-ThomasNeural"},
     {"active": False, "use_cli": True, "name": "Vision", "provider": "qwen", "model": "vision-model", "voice": "en-HK-SamNeural"},
 
     # OLLAMA (local)
     {"active": False, "use_cli": True, "name": "Nemotron", "provider": "ollama", "model": "nemotron-3-nano:30b-cloud", "voice": "en-IN-PrabhatNeural"},
+
+    # HUMAN PLAYER - Set active: True to play as human (terminal input)
+    {"active": True, "use_cli": True, "name": "Player 1", "provider": "human", "model": "human", "voice": "en-US-AriaNeural"},
 ]

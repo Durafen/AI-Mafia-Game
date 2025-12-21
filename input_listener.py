@@ -29,3 +29,13 @@ class InputListener:
             if c == ' ':
                 return True
         return False
+
+    def pause_for_input(self):
+        """Restore normal terminal mode for blocking input()"""
+        if self.old_settings:
+            # Use TCSAFLUSH to discard any buffered input and restore settings
+            termios.tcsetattr(sys.stdin, termios.TCSAFLUSH, self.old_settings)
+
+    def resume_cbreak(self):
+        """Re-enable cbreak mode after input"""
+        tty.setcbreak(sys.stdin.fileno())

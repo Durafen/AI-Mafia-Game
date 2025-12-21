@@ -20,6 +20,7 @@ class UnifiedLLMClient:
     def __init__(self, debug: bool = True, log_dir: str = None):
         self.debug = debug
         self.log_dir = log_dir
+        self.suppress_console = False  # Set True in human mode to hide debug prints
         
         # Initialize clients ONLY if keys are present (avoids error if using CLI only)
         self.openai_client = None
@@ -163,7 +164,7 @@ class UnifiedLLMClient:
                         found_result = True
                         break
                 
-                if not found_result:
+                if not found_result and not self.suppress_console:
                     print("Debug: JSON List returned but no 'result' field found.")
                     # fallback, maybe the text was just a list? (Unlikely for TurnOutput)
 
@@ -185,8 +186,9 @@ class UnifiedLLMClient:
 
         except (json.JSONDecodeError, Exception) as e:
             # Fallback or error handling could go here. For now, re-raise or return a dummy fail.
-            print(f"Error parsing JSON: {e}")
-            print(f"Raw received: {response_text}")
+            if not self.suppress_console:
+                print(f"Error parsing JSON: {e}")
+                print(f"Raw received: {response_text}")
             # Try to recover partial? No, strictly fail for now to catch issues early.
             raise ValueError(f"Failed to parse model output as JSON: {e}")
 
@@ -230,13 +232,14 @@ class UnifiedLLMClient:
             return result.stdout
         except subprocess.CalledProcessError as e:
             # If command not found or fails
-            print(f"CLI Error ({command}): {e.stderr}")
+            if not self.suppress_console:
+                print(f"CLI Error ({command}): {e.stderr}")
             raise e
 
     def generate_turn(self, player_name: str, provider: str, model_name: str, system_prompt: str, turn_prompt: str, turn_number: int, phase: str = "Day", use_cli: bool = True) -> TurnOutput:
 
         full_prompt = f"{system_prompt}\n\n{turn_prompt}"
-        print(f"🔄 [{player_name}] Sending prompt to {provider}/{model_name}...")
+        # print(f"🔄 [{player_name}] Sending prompt to {provider}/{model_name}...")
 
         max_retries = 3
         last_exception = None
@@ -356,7 +359,8 @@ class UnifiedLLMClient:
                 # Log the failure too
                 self._log_debug(player_name, turn_number, phase, full_prompt, f"ERROR (Attempt {attempt + 1}): {str(e)}")
                 
-                print(f"⚠️  [Attempt {attempt + 1}/{max_retries}] Error generating/parsing turn for {player_name}: {e}")
+                if not self.suppress_console:
+                    print(f"⚠️  [Attempt {attempt + 1}/{max_retries}] Error generating/parsing turn for {player_name}: {e}")
                 if attempt < max_retries - 1:
                     time.sleep(5)
         

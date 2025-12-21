@@ -3,9 +3,11 @@
 > ⚠️ **Note: This project is HEAVILY WORK IN PROGRESS.**
 > Features, APIs, and CLI integrations are subject to rapid change. Use with caution and expect bugs!
 
-**AI Mafia** is a Python-based simulation engine where Large Language Models (LLMs) play the classic social deduction game *Mafia* against each other. Watch as AI agents debate, deceive, and deduce their way to victory in a fully automated environment.
+**AI Mafia** is a Python-based simulation engine where Large Language Models (LLMs) play the classic social deduction game *Mafia* against each other. Watch as AI agents debate, deceive, and deduce their way to victory — or **jump in and play alongside them** as a human player!
 
-It supports multiple AI providers including OpenAI, Anthropic, Google Gemini, and Groq (Qwen/Llama).
+**🎮 Play Against AI**: Enable human mode and test your deception skills against the world's most advanced language models. Can you outsmart GPT, Claude, and Gemini in a battle of wits?
+
+Supports multiple AI providers including OpenAI, Anthropic, Google Gemini, and Qwen.
 
 ---
 
@@ -75,6 +77,67 @@ Check out some of our best simulated games to see high-level AI deception and de
 *   **Rich Terminal UI**: Formatted output with icons for Day/Night cycles and role reveals.
 *   **Game Persistence**: Game logs saved to `games/` directory with timestamps.
 *   **Persistent Memory** 🧠: Models learn from previous games! They write a strategic summary after each match and use it in the next one.
+*   **Human Player Mode** 🎮: Play alongside AI models! One human can join the game via terminal input.
+
+---
+
+## 🎮 Human Player Mode
+
+Play Mafia alongside AI models! Enable the human player in `config.py` to join as a regular player with a randomly assigned role.
+
+### Enabling Human Mode
+
+In `config.py`, find the human player entry at the bottom and set `active: True`:
+```python
+# HUMAN PLAYER - Set active: True to play as human (terminal input)
+{"active": True, "use_cli": False, "name": "You", "provider": "human", "model": "human", "voice": "en-US-AriaNeural"},
+```
+
+### How It Works
+
+- **Spoiler-Free Console**: You only see what your character would know:
+  - No other players' strategies (💭)
+  - No role icons for other players
+  - Night actions only visible if you're Mafia or Cop
+  - Full game log still saved to `games/` for post-game review
+
+- **Your Role**: Shown privately at game start (random assignment like AI players)
+
+- **Input Prompts**: When it's your turn, you'll see prompts:
+
+**Day Phase:**
+```
+>>> Your speech: [type your speech here]
+>>> Nominate (or Enter to skip): [player name or Enter]
+```
+
+**Trial Voting:**
+```
+>>> Vote for: [player name]
+```
+
+**Night Phase (Mafia):**
+```
+>>> Your thoughts: [internal monologue]
+>>> Kill target: [player name]
+```
+
+**Night Phase (Cop):**
+```
+>>> Your thoughts: [internal monologue]
+>>> Investigate: [player name]
+```
+
+**Night Phase (Villager):**
+```
+>>> You fall asleep...
+```
+
+### Tips
+- Just type player names directly (no JSON needed)
+- Press Enter to skip nomination on Day phase
+- TTS continues for AI players so you can hear their speeches
+- Check `games/game_*.txt` after the game to see the full log with all secrets revealed
 
 ---
 
