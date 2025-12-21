@@ -30,9 +30,9 @@ class Player:
 
     def _build_system_prompt(self, game_state: GameState) -> str:
         player_count = len(game_state.players)
-        villager_count = player_count - 3 # 2 Mafia, 1 Cop
+        villager_count = player_count - 2 # 2 Mafia
         prompt = f"""MAFIA GAME. You: {self.state.name} ({self.state.role}).
-{player_count} players: 2 Mafia, 1 Cop, {villager_count} Villagers.
+{player_count} players: 2 Mafia, {villager_count} Villagers (1 Cop).
 {'Role revealed on death.' if game_state.reveal_role_on_death else ''}
 """
         # Check if partner is alive
@@ -68,16 +68,16 @@ OUTPUT: JSON only, no backticks.
 {"strategy": "<100w, combine previous strategy with new info/suspicions/plans/strategy>",
 """
         # Dynamic Speech Description
-        speech_desc = "<100w public statement>"
+        speech_desc = "<75w public statement>"
         if game_state.phase == "Trial" and game_state.on_trial != self.state.name:
             speech_desc = "null"
         elif game_state.phase == "Night" and self.state.role == "Mafia":
             if partner_alive:
-                speech_desc = "<100w whisper to partner>"
+                speech_desc = "<75w whisper to partner>"
             else:
-                speech_desc = "<100w internal monologue>"
+                speech_desc = "<75w internal monologue>"
         elif game_state.phase == "Night" and self.state.role == "Cop":
-            speech_desc = "<100w internal monologue>"
+            speech_desc = "<75w internal monologue>"
 
         prompt += f'"speech": "{speech_desc}",\n'
 
@@ -108,10 +108,15 @@ OUTPUT: JSON only, no backticks.
         prompt = f"State: {game_state.phase} {game_state.turn}\nAlive: {', '.join(living)}\nDead: {', '.join(dead) if dead else 'None'}\n\n"
 
         # LYLO Check (Lynch or Lose)
-        if game_state.phase in ["Day", "Trial"]:
-             mafia_count = sum(1 for p in living_states if p.role == "Mafia")
-             if len(living) == 2 * mafia_count + 1 and mafia_count > 0:
-                 prompt += f"LYLO: {mafia_count} Mafia / {len(living)} Alive. Misvote = LOSE!!! Double think about all clues!\n\n"
+        if game_state.phase in ["Day", "Trial", "Night"]:
+            mafia_count = sum(1 for p in living_states if p.role == "Mafia")
+            if len(living) == 2 * mafia_count + 1 and mafia_count > 0:
+                if self.state.role == "Mafia":
+                    prompt += f"LYLO: {mafia_count} Mafia / {len(living)} Alive. Victory is close! Eliminate a Villager to WIN!\n\n"
+                else:
+                    prompt += f"LYLO: {mafia_count} Mafia / {len(living)} Alive. Misvote = LOSE!!! Double think about all clues!\n\n"
+            elif game_state.phase == "Night" and len(living) == 2 * mafia_count + 2 and mafia_count > 0:
+                prompt += f"WARNING: Next Day is LYLO ({mafia_count} Mafia / {len(living)-1} expected alive)! Tonight is critical.\n\n"
 
         # 2. Logs
         prompt += "--- LOG ---\n"
@@ -142,7 +147,7 @@ OUTPUT: JSON only, no backticks.
                  prompt += "TRIAL: You're on trial. Defend yourself. vote=null.\n"
              else:
                  prompt += f"TRIAL: {game_state.on_trial} is on trial. Silent vote. Votes are public.\n"
-                 prompt += "vote=guilty/innocent/abstain. Guilty > Innocent = hanged.\n"
+                 prompt += "vote=guilty (kill) / innocent (save) / abstain. Guilty > Innocent = hanged.\n"
 
                  prompt += "Consider the implications of your vote.\n"
         elif game_state.phase == "Night":
@@ -156,10 +161,11 @@ OUTPUT: JSON only, no backticks.
              # Day Phase
              prompt += f"DAY {game_state.turn}. {self.state.name}, analyze the situation, bring something new to the table, speak out, make it count."
              if self.state.role == "Cop":
-                 prompt += "\nWARNING: HIDE ROLE. Do NOT say 'investigate' or reveal yourself. Act like a Villager."
-             prompt += "\nUse 'vote' to NOMINATE a suspect for trial (PlayerName ONLY or null)."
+                 prompt += "\nWARNING: Hide role. Do NOT say 'investigate' or reveal yourself. Blend in smartly."
              if game_state.turn == 1:
                  prompt += "\nNo voting on Day 1 (vote=null)."
+             else:
+                 prompt += "\nUse 'vote' to nominate a suspect for trial (PlayerName ONLY or null)."
              prompt += "\n"
 
         return prompt

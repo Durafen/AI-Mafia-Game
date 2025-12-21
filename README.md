@@ -54,6 +54,9 @@ Check out some of our best simulated games to see high-level AI deception and de
 *   **[Example 6: The "Redemption Arc"](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/The_Redemption_Arc.txt)**
     *   **Highlights**: A Town misled by a martyr's error hangs an innocent... only for the loudest accuser to turn Detective and face the lying manipulator in a 1v1 showdown. A masterclass in deception and recovery.
 
+*   **[Example 7: The "Rustling" Deception](https://raw.githubusercontent.com/Durafen/8-AI-Play-Mafia/master/examples/The_Rustling_Deception.txt)**
+    *   **Highlights**: A simple Mafia lie about 'hearing rustling' becomes accepted fact. The Town executes a truthful Villager for contradicting it, and eventually hangs the Real Cop because his actions don't fit the fake narrative. A perfect demo of how a consistent lie defeats the messy truth.
+
 ---
 
 ## 🚀 Features
