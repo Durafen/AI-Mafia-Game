@@ -90,8 +90,23 @@ Play Mafia alongside AI models! Enable the human player in `config.py` to join a
 In `config.py`, find the human player entry at the bottom and set `active: True`:
 ```python
 # HUMAN PLAYER - Set active: True to play as human (terminal input)
-{"active": True, "use_cli": False, "name": "You", "provider": "human", "model": "human", "voice": "en-US-AriaNeural"},
+{"active": True, "use_cli": False, "name": "You", "provider": "human", "model": "human", "voice": "en-US-AriaNeural", "role": "random"},
 ```
+
+### Role Preference
+
+You can set a preferred role for yourself (or any player) using the `role` field:
+- `"random"` - Default, randomly assigned
+- `"mafia"` - Prefer Mafia role
+- `"cop"` - Prefer Cop role
+- `"villager"` - Prefer Villager role
+
+```python
+# Play as Mafia
+{"active": True, "name": "Player 1", "provider": "human", "model": "human", "voice": "en-US-AriaNeural", "role": "mafia"},
+```
+
+> **Note:** Role preferences are honored when possible, but may be overridden if too many players request the same role (e.g., only 2 Mafia slots available).
 
 ### How It Works
 
@@ -261,12 +276,13 @@ Each entry requires:
 - `provider`: `openai`, `anthropic`, `google`, or `groq`.
 - `model`: The exact model string (e.g., `gpt-5.2` for CLI or `gpt-4o` for API).
 - `voice`: Edge TTS voice ID (e.g., `en-US-GuyNeural`, `en-GB-RyanNeural`).
+- `role`: (Optional) Preferred role - `"random"`, `"mafia"`, `"cop"`, or `"villager"`.
 
 **Example:**
 ```python
 ROSTER_CONFIG = [
-    {"name": "Mastermind", "provider": "openai", "model": "gpt-5.2"},
-    {"name": "The Poet", "provider": "anthropic", "model": "haiku"}, 
+    {"name": "Mastermind", "provider": "openai", "model": "gpt-5.2", "role": "random"},
+    {"name": "The Poet", "provider": "anthropic", "model": "haiku", "role": "mafia"},
 ]
 ```
 

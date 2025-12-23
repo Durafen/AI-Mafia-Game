@@ -33,8 +33,8 @@ class InputListener:
     def pause_for_input(self):
         """Restore normal terminal mode for blocking input()"""
         if self.old_settings:
-            # Use TCSAFLUSH to discard any buffered input and restore settings
-            termios.tcsetattr(sys.stdin, termios.TCSAFLUSH, self.old_settings)
+            # Use TCSADRAIN to wait for output, don't discard input
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
 
     def resume_cbreak(self):
         """Re-enable cbreak mode after input"""

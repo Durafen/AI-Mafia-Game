@@ -89,11 +89,12 @@ class GameEngine:
             actor_display = f"{idx}. {actor}:"
 
             # Add role icon for terminal display only
-            # In human mode, only show icon for human's own role (unless human is dead = spectator)
+            # In human mode, only show icon for human's own role or partner (unless human is dead = spectator)
             if player.state.role in ("Mafia", "Cop"):
                 show_icon = (not self.human_mode or
                             not self._is_human_alive() or
-                            (self.human_player and player.state.name == self.human_player.state.name))
+                            (self.human_player and player.state.name == self.human_player.state.name) or
+                            (self.human_role == "Mafia" and self.human_player and player.state.name == self.human_player.partner_name))
                 if show_icon:
                     actor_display = f"{self._get_role_emoji(player.state.role)} {actor_display}"
 
@@ -193,14 +194,40 @@ class GameEngine:
             raise ValueError(f"Need at least 3 active players, got {player_count}")
 
         # 2. Assign Roles (2 Mafia, 1 Cop, rest Villagers)
-        # Ensure we have enough players for special roles
+        # First respect role preferences from config, then fill randomly
         indices = list(range(player_count))
-        mafia_indices = set(random.sample(indices, 2))
-        
+        mafia_indices = set()
         cop_index = -1
-        remaining_indices = [i for i in indices if i not in mafia_indices]
-        if remaining_indices:
-             cop_index = random.choice(remaining_indices)
+
+        # Collect preferred roles
+        for i, config in enumerate(roster):
+            pref = config.get("role", "random").lower()
+            if pref == "mafia" and len(mafia_indices) < 2:
+                mafia_indices.add(i)
+            elif pref == "cop" and cop_index == -1:
+                cop_index = i
+
+        # Fill remaining Mafia slots randomly
+        remaining = [i for i in indices if i not in mafia_indices and i != cop_index]
+        while len(mafia_indices) < 2 and remaining:
+            pick = random.choice(remaining)
+            # Skip if this player wanted cop/villager specifically
+            pref = roster[pick].get("role", "random").lower()
+            if pref in ("cop", "villager"):
+                remaining.remove(pick)
+                continue
+            mafia_indices.add(pick)
+            remaining.remove(pick)
+
+        # Fill Cop slot randomly if not set
+        if cop_index == -1:
+            remaining = [i for i in indices if i not in mafia_indices]
+            # Prefer players who didn't specify a different role
+            candidates = [i for i in remaining if roster[i].get("role", "random").lower() in ("random", "cop")]
+            if candidates:
+                cop_index = random.choice(candidates)
+            elif remaining:
+                cop_index = random.choice(remaining)
 
         mafia_names = []
 
@@ -325,8 +352,14 @@ class GameEngine:
     def _take_player_turn(self, player: Player) -> TurnOutput:
         """Take a player's turn, handling terminal mode for human players."""
         is_human = isinstance(player, HumanPlayer)
-        if is_human and self.listener:
-            self.listener.pause_for_input()
+        if is_human:
+            # Wait for TTS to finish before showing human prompt
+            self.tts.wait_for_speech()
+            # Announce it's their turn
+            self._announce("Your turn")
+            self.tts.wait_for_speech()
+            if self.listener:
+                self.listener.pause_for_input()
         try:
             output = player.take_turn(self.state, self.state.turn)
         finally:
@@ -580,8 +613,10 @@ class GameEngine:
                 # Identify Nominees (anyone with at least one nomination)
                 nominee_counts = {}
                 for target in nominations.values():
-                     if any(p.state.name == target for p in living):
-                         nominee_counts[target] = nominee_counts.get(target, 0) + 1
+                     # Case-insensitive match, use proper name capitalization
+                     matched = next((p.state.name for p in living if p.state.name.lower() == target.lower()), None)
+                     if matched:
+                         nominee_counts[matched] = nominee_counts.get(matched, 0) + 1
 
                 if not nominee_counts:
                     self.log("Day", "System", "Info", "No nominations")

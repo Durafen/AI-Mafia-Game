@@ -1,6 +1,8 @@
 from typing import List, Optional
 from schemas import PlayerState, TurnOutput, GameState, LogEntry
 from api_clients import UnifiedLLMClient
+from prompt_toolkit import PromptSession
+from prompt_toolkit.key_binding import KeyBindings
 
 class Player:
     def __init__(self, name: str, role: str, provider: str, model_name: str, client: UnifiedLLMClient, player_index: int, use_cli: bool = True, memory_enabled: bool = True):
@@ -217,7 +219,7 @@ Your Status: {'Alive' if self.state.is_alive else 'Dead'}
 
 GOAL:
 Analyze the game logs and your own performance. 
-Write a summary (MAX 300 WORDS) of what you learned, your strategy for next time, and key takeaways.
+Write a summary (MAX 200 WORDS) of what you learned, your strategy for next time, and key takeaways.
 This text will be SAVED to your memory file and provided to you in the next game.
 
 Output ONLY the memory text. Do not output JSON.
@@ -306,6 +308,37 @@ class HumanPlayer(Player):
         self.memory_enabled = False
         self.client = None
 
+    def _multiline_input(self, prompt_text: str) -> Optional[str]:
+        """Read multiline input with prompt_toolkit - double Enter to submit"""
+        print(prompt_text + " (double Enter to submit, or Ctrl+D)")
+
+        bindings = KeyBindings()
+
+        @bindings.add('enter')
+        def handle_enter(event):
+            buf = event.app.current_buffer
+            # Check if cursor is at end and text ends with newline
+            if buf.text.endswith('\n') and buf.cursor_position == len(buf.text):
+                # Double enter - strip trailing newline and submit
+                buf.text = buf.text.rstrip('\n')
+                buf.validate_and_handle()
+            else:
+                buf.insert_text('\n')
+
+        @bindings.add('c-d')
+        def handle_ctrl_d(event):
+            event.app.current_buffer.validate_and_handle()
+
+        try:
+            session = PromptSession(multiline=True, key_bindings=bindings)
+            text = session.prompt("")
+            result = text.strip() if text.strip() else None
+            print("✓ Input accepted" if result else "✓ Skipped")
+            return result
+        except (EOFError, KeyboardInterrupt):
+            print("✓ Skipped")
+            return None
+
     def take_turn(self, game_state: GameState, turn_number: int) -> TurnOutput:
         """Prompt human for speech and vote based on phase/role"""
         phase = game_state.phase
@@ -318,13 +351,13 @@ class HumanPlayer(Player):
         speech = None
         vote = None
 
-        # Speech prompt
+        # Speech prompt (multiline)
         if phase in ["Day", "LastWords"]:
-            speech = input("\n>>> Your speech: ").strip() or None
+            speech = self._multiline_input("\n>>> Your speech:")
         elif phase == "Trial" and game_state.on_trial == self.state.name:
-            speech = input("\n>>> Your defense: ").strip() or None
+            speech = self._multiline_input("\n>>> Your defense:")
         elif phase == "Night" and self.state.role in ["Mafia", "Cop"]:
-            speech = input("\n>>> Your thoughts: ").strip() or None
+            speech = self._multiline_input("\n>>> Your thoughts:")
 
         # Vote prompt
         if phase == "Day" and game_state.turn > 1:

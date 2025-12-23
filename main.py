@@ -18,6 +18,12 @@ class Logger(object):
         self.terminal.flush()
         self.log.flush()
 
+    def isatty(self):
+        return self.terminal.isatty()
+
+    def fileno(self):
+        return self.terminal.fileno()
+
 def main():
     # Redirect stdout to capture all output
     sys.stdout = Logger()
