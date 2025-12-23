@@ -1170,23 +1170,39 @@ class GameEngine:
         # Wait for announcement to finish before starting the reflection loop
         self.tts.wait_for_speech()
 
-        for p in self.players:
-            self._print(f"Writing memory for {p.state.name}...")
+        # Parallelize reflection for all players
+        def process_reflection(p):
+            if isinstance(p, HumanPlayer):
+                return p, None # Human doesn't reflect
+                
             try:
                 # 1. Generate Reflection (Blocking)
-                # While this computes, the PREVIOUS player's TTS might be playing in background.
                 new_memory = p.reflect_on_game(self.state, winner)
                 
                 # 2. Save to file
                 with open(f"memories/{p.state.name}.txt", "w", encoding='utf-8') as f:
                     f.write(new_memory)
-                
-                # 3. Log to Game Log and Console
-                self._print(f"\n🧠 {p.state.name} Memory: {new_memory}")
-                self.log("Reflection", p.state.name, "reflect", new_memory)
-
+                return p, new_memory
             except Exception as e:
-                self._print(f"Error saving memory for {p.state.name}: {e}")
+                return p, e
+
+        self._print(f"Starting parallel reflection for {len(self.players)} players...")
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            futures = {executor.submit(process_reflection, p): p for p in self.players}
+            
+            for future in concurrent.futures.as_completed(futures):
+                p, result = future.result()
+                
+                # Skip human
+                if result is None:
+                    continue
+
+                if isinstance(result, Exception):
+                    self._print(f"Error saving memory for {p.state.name}: {result}")
+                else:
+                    self._print(f"\n🧠 {p.state.name} Memory: {result}")
+                    self.log("Reflection", p.state.name, "reflect", result)
         
         self._print("All memories updated for next game.")
 

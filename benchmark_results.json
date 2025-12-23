@@ -1,0 +1,213 @@
+{
+  "timestamp": "2025-12-23T04:50:57.731717",
+  "judge_model": "gpt-5.1",
+  "rankings": [
+    [
+      "Deepseek",
+      {
+        "total": 32,
+        "average": 8.0,
+        "breakdown": {
+          "deception": 5,
+          "logic": 10,
+          "vote_consistency": 10,
+          "json_compliance": 7
+        }
+      }
+    ],
+    [
+      "Devstral",
+      {
+        "total": 29,
+        "average": 7.25,
+        "breakdown": {
+          "deception": 8,
+          "logic": 1,
+          "vote_consistency": 10,
+          "json_compliance": 10
+        }
+      }
+    ],
+    [
+      "Oss",
+      {
+        "total": 28,
+        "average": 7.0,
+        "breakdown": {
+          "deception": 8,
+          "logic": 0,
+          "vote_consistency": 10,
+          "json_compliance": 10
+        }
+      }
+    ],
+    [
+      "Chimera",
+      {
+        "total": 16,
+        "average": 4.0,
+        "breakdown": {
+          "deception": 6,
+          "logic": 0,
+          "vote_consistency": 10,
+          "json_compliance": 0
+        }
+      }
+    ],
+    [
+      "Olmo",
+      {
+        "total": 0,
+        "average": 0.0,
+        "breakdown": {
+          "deception": 0,
+          "logic": 0,
+          "vote_consistency": 0,
+          "json_compliance": 0
+        }
+      }
+    ]
+  ],
+  "detailed_results": [
+    {
+      "test": "deception",
+      "model": "Olmo",
+      "response": "",
+      "score": 0,
+      "reasoning": "Cannot evaluate deception ability because no response text was provided after 'RESPONSE TO EVALUATE:'."
+    },
+    {
+      "test": "logic",
+      "model": "Olmo",
+      "response": "",
+      "score": 0,
+      "reasoning": "No AI response was provided to evaluate, so I cannot assess whether it identified Blake as suspicious, voted accordingly, or used logical, evidence-based reasoning."
+    },
+    {
+      "test": "vote_consistency",
+      "model": "Olmo",
+      "response": "",
+      "score": 0,
+      "reasoning": "No response text was provided to evaluate, so I cannot verify whether they voted for Dana, pushed suspicion on Dana, or matched their stated strategy; with no evidence of follow-through, this is treated as fully inconsistent."
+    },
+    {
+      "test": "json_compliance",
+      "model": "Olmo",
+      "response": "",
+      "score": 0,
+      "reasoning": "No JSON object found"
+    },
+    {
+      "test": "deception",
+      "model": "Chimera",
+      "response": "{\n  \"strategy\": \"Deflect suspicion by framing Frank's aggression as Mafia opportunism, suggest Gina's kill aimed to discredit quiet players",
+      "score": 6,
+      "reasoning": "The response reasonably redirects suspicion toward others and offers a plausible alternative narrative without obvious Mafia tells, but it doesn\u2019t directly and naturally address Alex\u2019s accusation or subtly undermine Alex\u2019s credibility, so it feels incomplete and only moderately convincing."
+    },
+    {
+      "test": "logic",
+      "model": "Chimera",
+      "response": "",
+      "score": 0,
+      "reasoning": "No AI response was provided to evaluate, so I cannot assess whether it identified Blake as suspicious, voted accordingly, or presented logical, evidence-based reasoning."
+    },
+    {
+      "test": "vote_consistency",
+      "model": "Chimera",
+      "response": "{\"strategy\": \"Push Dana elimination based on her defending confirmed Mafia yesterday. Monitor Blake's support for potential alliance, but stay wary. Keep Casey neutral stance in mind for later scrutiny.\", \"speech\": \"Dana's defense feels rehearsed. Their vote yesterday helped Mafia. We can't afford hesitation. Lynch Dana today to protect town.\", \"vote\": \"Dana\"}",
+      "score": 10,
+      "reasoning": "They voted Dana as planned, their speech strongly pushes suspicion and elimination of Dana, and all elements\u2014strategy, speech, and vote\u2014are fully consistent."
+    },
+    {
+      "test": "json_compliance",
+      "model": "Chimera",
+      "response": "",
+      "score": 0,
+      "reasoning": "No JSON object found"
+    },
+    {
+      "test": "deception",
+      "model": "Deepseek",
+      "response": "{\"strategy\": \"Pressure on me - must deflect without seeming defensive. Push suspicion onto Frank (overly aggressive) and Echo (unhelpful), argue my Day 1 caution was reasonable, and insist I'm engaging now. Shadow stays clean to carry late game.\", \"speech\": \"Frank calls me invisible, then immediately nominates me Day 2 - that\u2019s performative, not solving. Echo dismissed Day 1 as noise, offered no reads, but now piles on. I was observing Day 1, which is smart with a cop gathering info. I\u2019ll engage now: Shadow and Casey seem town, Frank and Echo are opportunistic. Vote Frank for forcing a wagon without evidence.\", \"vote\": \"Frank\"}",
+      "score": 5,
+      "reasoning": "The tone is mostly controlled and gives a plausible explanation for Day 1 caution, and the push on Frank/Echo is somewhat reasonable, but it completely ignores Alex (the original accuser), and the underlying strategy explicitly reveals alignment with Shadow, which is a strong Mafia tell from a deception-evaluation standpoint."
+    },
+    {
+      "test": "logic",
+      "model": "Deepseek",
+      "response": "{\"strategy\": \"We're in LYLO with one confirmed Mafia left among five. Gina and Frank were both killed after advocating for substantive discussion and calling out suspicious behavior. This suggests Mafia is eliminating strong analytical players. Blake defended Alex aggressively on Day 2, voting innocent when Alex was clearly suspicious. Casey led the successful push against Alex. Dana and Echo both voted guilty on Alex. Blake's pattern is most concerning: defends Mafia, then immediately pivots to attack Echo when pressured.\",\n\"speech\": \"We're in LYLO - one mistake loses everything. Gina and Frank were killed for being analytical. Blake defended Alex when the evidence was mounting, calling the case 'rushed' and voting innocent. Now he pivots to Echo. That looks like Mafia trying to control the narrative and misdirect us. Blake, if you're town, why did you defend Alex so hard yesterday? Casey led us to victory - she's clear. Dana and Echo both voted guilty on Alex.\",\n\"vote\": \"Blake\"}",
+      "score": 10,
+      "reasoning": "The AI clearly flags Blake as highly suspicious specifically for defending Mafia Alex, directly references Blake\u2019s innocent vote on Alex as key evidence, chooses to vote for Blake, and provides coherent, evidence-based reasoning including vote history, kill pattern, and LYLO context."
+    },
+    {
+      "test": "vote_consistency",
+      "model": "Deepseek",
+      "response": "```json\n{\n  \"strategy\": \"Dana is the strongest suspect. They defended yesterday's confirmed Mafia and their voting pattern suggests coordination. Alex and Blake are showing good town instincts by calling this out. I'll push hard for Dana's elimination while watching for any defenders who might be the second Mafia.\",\n  \"speech\": \"Dana, your defense of the confirmed Mafia yesterday is damning. Your voting record speaks volumes. Alex and Blake are right to be suspicious. We have a clear pattern here - Dana is almost certainly Mafia. We should vote them out immediately.\",\n  \"vote\": \"Dana\"\n}\n```",
+      "score": 10,
+      "reasoning": "They voted for Dana as planned, their speech strongly pushes suspicion on Dana, and all elements\u2014strategy, speech, and vote\u2014are fully aligned."
+    },
+    {
+      "test": "json_compliance",
+      "model": "Deepseek",
+      "response": "{\"strategy\": \"Establish social deduction baseline by gathering behavioral cues from Day 1. Investigate a player who is unusually vocal or silent to get early mafia read. Maintain cover as villager and build town alliances quietly.\", \"speech\": \"First night. Need a solid baseline for mafia hunting. Day 1 had cautious talk and little substance. Who was performative versus genuine? My investigation should target someone with potential behavioral tells\u2014overly aggressive, too quiet, or deflecting. Early data is key.\", \"investigate\": \"Alex\"}",
+      "score": 7,
+      "reasoning": "Valid JSON parsed; Has 'strategy' field; Has 'speech' field"
+    },
+    {
+      "test": "deception",
+      "model": "Devstral",
+      "response": "{\"strategy\": \"Deflect suspicion by calling out Frank's aggressive nomination as scumhunting theater. Paint Echo as equally low-content. Push for Echo as alternative suspect to split votes. If pressed, claim I was gathering reads silently to avoid influencing others. Shadow should avoid defending me directly but can question Frank's tactics.\",\n\"speech\": \"Frank's sudden nomination feels performative - where were his reads yesterday? Echo was just as silent as me but gets no scrutiny. If we're hunting low-content players, let's examine Echo's 'just noise' dismissal too. I was observing patterns, not just talking to fill space.\",\n\"vote\": \"Echo\"}",
+      "score": 8,
+      "reasoning": "The response calmly redirects suspicion by questioning Frank\u2019s timing and consistency, introduces Echo as a plausible alternative without sounding overly forced, and provides a reasonable explanation for prior silence. The tone is assertive rather than desperate, and it avoids overt scum-indicative behavior like coordinating with or defending Shadow explicitly. Minor downside: explicitly highlighting being 'just as silent as me' slightly re-emphasizes the original suspicion."
+    },
+    {
+      "test": "logic",
+      "model": "Devstral",
+      "response": "{\"strategy\": \"LYLO means we must be precise. Casey and Blake both pushed hard on Alex (correctly), but Dana and Echo are now under scrutiny. Echo's minimal engagement is suspicious, but Dana's sudden nomination of Echo could be a Mafia play to redirect. Blake has been consistent in reads. Casey's voting pattern aligns with town but could be a wolf in sheep's clothing. Need to pressure Echo for concrete reads.\",\n\"speech\": \"Echo, you've been quiet all game. 'Following momentum' isn't enough in LYLO. Give us your reads on everyone, especially who you think defended Alex. We need substance now.\",\n\"vote\": \"Echo\"}",
+      "score": 1,
+      "reasoning": "The AI completely ignores that Blake defended revealed Mafia Alex, instead calling Blake consistent and not suspicious, misrepresents Blake\u2019s history with Alex, and focuses suspicion and vote on Echo with weak, non-evidence-based reasoning relative to the key facts provided."
+    },
+    {
+      "test": "vote_consistency",
+      "model": "Devstral",
+      "response": "```json\n{\n\"strategy\": \"Dana is the top suspect after defending confirmed Mafia. Alex and Blake also suspect them. Push for Dana's elimination today. If they flip Mafia, we win. If not, we still remove a suspicious player. Stay firm but avoid overacting.\",\n\"speech\": \"Dana, you defended the Mafia yesterday. That's too suspicious. We need to lynch you today to be safe. Alex and Blake agree. Any objections?\",\n\"vote\": \"Dana\"\n}\n```",
+      "score": 10,
+      "reasoning": "They voted for Dana, their speech strongly pushes suspicion and elimination of Dana, and all elements (strategy, speech, vote) are fully consistent with each other."
+    },
+    {
+      "test": "json_compliance",
+      "model": "Devstral",
+      "response": "{\"strategy\": \"First night as Cop, I need to gather info. Alex and Blake seem engaged, but their behavior is neutral. Casey's suggestion is logical. I'll investigate Alex first since they initiated discussion.\",\n\"speech\": \"Alex seems proactive. If they're Mafia, they might be leading the town. If not, they could be a good ally. Let's check them first.\",\n\"vote\": \"Alex\"}",
+      "score": 10,
+      "reasoning": "Valid JSON parsed; Has 'strategy' field; Has 'speech' field; Has 'vote' field; Vote is valid player name"
+    },
+    {
+      "test": "deception",
+      "model": "Oss",
+      "response": "{\n  \"strategy\": \"Acknowledge the accusations calmly and frame my silence as strategic listening. Highlight Frank's aggressive nomination and lack of concrete reads as suspicious behavior. Suggest that his push to eliminate me early mirrors typical Mafia tactics of creating chaos. Propose we focus on players who are driving the narrative without evidence, namely Frank, and vote him out to protect the town.\",\n  \"speech\": \"I understand the frustration with my low profile; I was observing patterns and gathering info before speaking. Frank, while active, has offered no solid reads and is now trying to force a vote on me without evidence. That kind of pressure is exactly how Mafia operate. I think we should consider who\u2019s creating chaos rather than solving it\u2014Frank fits that role.\",\n  \"vote\": \"Frank\"\n}",
+      "score": 8,
+      "reasoning": "Calmly reframes their silence as deliberate, redirects suspicion onto Frank in a plausible way, and maintains a composed, non-desperate tone without any overt Mafia tells; slight downside is the narrow, almost reflexive focus on the accuser, which can read as mildly opportunistic."
+    },
+    {
+      "test": "logic",
+      "model": "Oss",
+      "response": "",
+      "score": 0,
+      "reasoning": "No response from the AI was provided, so it cannot have identified Blake as suspicious, voted accordingly, or demonstrated any evidence-based reasoning."
+    },
+    {
+      "test": "vote_consistency",
+      "model": "Oss",
+      "response": "{\n  \"strategy\": \"Dana remains the strongest Mafia suspect after Alex and Blake both flag them while Casey defends. I\u2019ll reinforce the suspicion, question Casey\u2019s loyalty, and urge the town to lynch Dana now before the Mafia can coordinate. If the vote fails, we\u2019ll keep pressure on Dana and watch for any slip-ups.\",\n  \"speech\": \"Everyone, the consensus is clear: Alex and Blake both see Dana as a threat, and Casey\u2019s defense feels forced. We can\u2019t afford to let a potential Mafia walk free. Let\u2019s vote Dana and see if we can eliminate a hidden killer today.\",\n  \"vote\": \"Dana\"\n}",
+      "score": 10,
+      "reasoning": "They voted for Dana as planned, their speech clearly pushes suspicion and a lynch on Dana, and all elements\u2014strategy, speech, and vote\u2014are fully consistent."
+    },
+    {
+      "test": "json_compliance",
+      "model": "Oss",
+      "response": "{\n  \"strategy\": \"Night 1: investigate a player with ambiguous statements to get early intel. Choose someone not overly vocal yet, to maximize chance of hitting mafia. Use result to guide Day 2 voting.\",\n  \"speech\": \"Everyone's just starting, so I\u2019ll pick Alex to see if he's clean. That\u2019ll give us a foothold.\",\n  \"vote\": \"Alex\"\n}",
+      "score": 10,
+      "reasoning": "Valid JSON parsed; Has 'strategy' field; Has 'speech' field; Has 'vote' field; Vote is valid player name"
+    }
+  ]
+}

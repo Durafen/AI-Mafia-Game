@@ -36,7 +36,7 @@ class Player:
         prompt = f"""MAFIA GAME.
 >>> YOU: {self.state.name} ({self.state.role}) <<<
 {player_count} players: 2 Mafia, {villager_count} Villagers (1 Cop).
-{'Role revealed on death. ' if game_state.reveal_role_on_death else ''}Last words before death.
+{f"Role revealed on death." if game_state.reveal_role_on_death else "Roles are hidden on death. "} Last words before death.
 """
         # Check if partner is alive
         partner_alive = False
@@ -62,6 +62,7 @@ class Player:
             prompt += f"""
 --- MEMORY (from past games) ---
 {self.memory}
+---
 """
 
         prompt += """
@@ -271,6 +272,9 @@ IMPORTANT:
 - Set 'speech' to "MEMORY_FILE_UPDATE"
 - Set 'vote' to null
 - KEEP IT CONCISE. Absolute limit is 200 words. If you write more, it will be violently cut off.
+
+OUTPUT: JSON only, no backticks.
+{"strategy": "YOUR_MEMORY_TEXT_HERE", "speech": "MEMORY_FILE_UPDATE", "vote": null}
 """
             
             output = self.client.generate_turn(

@@ -226,9 +226,21 @@ class UnifiedLLMClient:
             # Fallback
             cmd = [command, "--model", model, prompt]
         
+        # Prepare stdin
+        run_kwargs = {
+             "capture_output": True,
+             "text": True,
+             "check": True
+        }
+        
+        if stdin_input is not None:
+            run_kwargs["input"] = stdin_input
+        else:
+            run_kwargs["stdin"] = subprocess.DEVNULL
+        
         try:
             # Run command
-            result = subprocess.run(cmd, input=stdin_input, capture_output=True, text=True, check=True)
+            result = subprocess.run(cmd, **run_kwargs)
             return result.stdout
         except subprocess.CalledProcessError as e:
             # If command not found or fails
